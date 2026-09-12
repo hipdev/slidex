@@ -8,8 +8,8 @@
     "dev:web": "turbo run dev --filter=slidex-web",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "convex:dev": "pnpm --filter=slidex-web convex dev",
-    "convex:deploy": "pnpm --filter=slidex-web convex deploy"
+    "convex:dev": "pnpm --filter=@slidex/backend convex:dev",
+    "convex:deploy": "pnpm --filter=@slidex/backend convex:deploy"
   },
   "devDependencies": {
     "turbo": "^2.9.16"

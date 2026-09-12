@@ -3,11 +3,15 @@ import { convexGateway } from "@convex-dev/ai-sdk-provider";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { action, internalAction, mutation } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const request = mutation({
   args: { presentationId: v.id("presentations"), prompt: v.string(), url: v.optional(v.string()) },
   returns: v.id("operations"),
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const presentation = await ctx.db.get(args.presentationId);
+    if (!userId || !presentation?.ownerId || presentation.ownerId !== userId) throw new Error("Only the presentation host can ask the Slide Agent");
     const operationId = await ctx.db.insert("operations", { presentationId: args.presentationId, kind: "research", status: "queued", input: args.prompt, createdAt: Date.now() });
     await ctx.scheduler.runAfter(0, internal.research.run, { operationId, presentationId: args.presentationId, prompt: args.prompt, url: args.url });
     return operationId;

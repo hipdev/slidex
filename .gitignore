@@ -4,5 +4,4 @@ node_modules
 out
 .env.local
 .env*.local
-apps/web/convex/_generated
 apps/web/.env.local

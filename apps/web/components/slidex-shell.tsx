@@ -1,15 +1,16 @@
 "use client";
 
-import { ConvexProvider, ConvexReactClient, useMutation, useQuery } from "convex/react";
+import { ConvexAuthProvider, useAuthActions, useConvexAuth } from "@convex-dev/auth/react";
+import { ConvexReactClient, useMutation, useQuery } from "convex/react";
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../convex/_generated/api";
+import { api } from "@slidex/backend/api";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
 export function SlidexShell() {
   const client = useMemo(() => convexUrl ? new ConvexReactClient(convexUrl) : null, []);
   if (!client) return <SetupNotice />;
-  return <ConvexProvider client={client}><Slidex /></ConvexProvider>;
+  return <ConvexAuthProvider client={client}><Slidex /></ConvexAuthProvider>;
 }
 
 function SetupNotice() {
@@ -18,9 +19,10 @@ function SetupNotice() {
 
 function Slidex() {
   const [slug, setSlug] = useState<string | null>(null);
-  const [attendeeId, setAttendeeId] = useState("");
   const [researchPrompt, setResearchPrompt] = useState("");
   const [researchUrl, setResearchUrl] = useState("");
+  const { isLoading, isAuthenticated } = useConvexAuth();
+  const { signIn } = useAuthActions();
   const data = useQuery(api.presentations.getBySlug, slug ? { slug } : "skip");
   const createDemo = useMutation(api.presentations.createDemo);
   const join = useMutation(api.presentations.join);
@@ -32,20 +34,22 @@ function Slidex() {
   useEffect(() => {
     const value = new URLSearchParams(window.location.search).get("room");
     if (value) setSlug(value.toUpperCase());
-    const stored = window.localStorage.getItem("slidex-attendee") ?? crypto.randomUUID();
-    window.localStorage.setItem("slidex-attendee", stored);
-    setAttendeeId(stored);
   }, []);
 
   useEffect(() => {
-    if (data?.presentation && attendeeId) void join({ presentationId: data.presentation._id, attendeeId });
-  }, [attendeeId, data?.presentation?._id, join]);
+    if (!isLoading && !isAuthenticated) void signIn("anonymous");
+  }, [isAuthenticated, isLoading, signIn]);
+
+  useEffect(() => {
+    if (data?.presentation && isAuthenticated) void join({ presentationId: data.presentation._id });
+  }, [data?.presentation?._id, isAuthenticated, join]);
 
   const createRoom = async () => {
     const room = await createDemo({ ownerName: "Julián" });
     window.location.assign(`?room=${room.slug}`);
   };
 
+  if (isLoading || !isAuthenticated) return <main className="setup"><p className="eyebrow">CONVEX AUTH</p><h1>Issuing your guest pass…</h1></main>;
   if (!slug) return <Launchpad onCreate={createRoom} />;
   if (data === undefined) return <main className="setup"><p className="eyebrow">CONNECTING TO {slug}</p><h1>Waking the room…</h1></main>;
   if (data === null) return <main className="setup"><div className="setup-card"><span className="eyebrow">ROOM NOT FOUND</span><h1>{slug} is not live.</h1><button onClick={() => setSlug(null)}>Create a new live room</button></div></main>;
@@ -63,8 +67,8 @@ function Slidex() {
       <section className={`stage ${current?.kind ?? "content"}`}>
         <div className="stage-meta"><span>SLIDE {String((current?.order ?? 0) + 1).padStart(2, "0")}</span><span>{current?.kind === "research" ? "✦ RESEARCH AGENT" : "● LIVE CANVAS"}</span></div>
         <div className="slide-copy"><p className="accent-label">{current?.kind === "poll" ? "AUDIENCE TAKEOVER" : current?.kind === "research" ? "FRESHLY GENERATED" : "A REALTIME PRESENTATION SYSTEM"}</p><h1>{current?.title}</h1><p>{current?.body}</p></div>
-        {isPoll && <div className="poll-results">{current.choices?.map((choice) => { const value = votes[choice.id] ?? 0; const pct = totalVotes ? Math.round(value / totalVotes * 100) : 0; return <button key={choice.id} onClick={() => vote({ presentationId: data.presentation._id, slideId: current._id, attendeeId, choiceId: choice.id })}><span>{choice.label}</span><strong>{pct}%</strong><i style={{ width: `${Math.max(pct, 2)}%` }} /></button>; })}<small>{totalVotes} live votes</small></div>}
-        <div className="reaction-strip">{([ ["fire", "🔥"], ["mind", "🤯"], ["heart", "♥"], ["question", "?" ]] as const).map(([key, icon]) => <button key={key} onClick={() => current && react({ presentationId: data.presentation._id, slideId: current._id, attendeeId, emoji: key })}><span>{icon}</span><b>{reactions[key] ?? 0}</b></button>)}</div>
+        {isPoll && <div className="poll-results">{current.choices?.map((choice) => { const value = votes[choice.id] ?? 0; const pct = totalVotes ? Math.round(value / totalVotes * 100) : 0; return <button key={choice.id} onClick={() => vote({ presentationId: data.presentation._id, slideId: current._id, choiceId: choice.id })}><span>{choice.label}</span><strong>{pct}%</strong><i style={{ width: `${Math.max(pct, 2)}%` }} /></button>; })}<small>{totalVotes} live votes</small></div>}
+        <div className="reaction-strip">{([ ["fire", "🔥"], ["mind", "🤯"], ["heart", "♥"], ["question", "?" ]] as const).map(([key, icon]) => <button key={key} onClick={() => current && react({ presentationId: data.presentation._id, slideId: current._id, emoji: key })}><span>{icon}</span><b>{reactions[key] ?? 0}</b></button>)}</div>
         <div className="slide-footer"><span>POWERED BY PEOPLE + AI</span><span>◒ {data.presentation.status.toUpperCase()}</span></div>
       </section>
       <aside className="agent-panel"><div className="agent-head"><div className="orb">✦</div><div><strong>Slide Agent</strong><small>Always in the room</small></div></div><div className="agent-log">{data.operations.length ? data.operations.map((operation) => <div key={operation._id} className={`log ${operation.status}`}><span>{operation.status === "complete" ? "✦" : operation.status === "failed" ? "!" : "◌"}</span><p><b>{operation.kind} {operation.status}</b><br />{operation.output ?? operation.error ?? operation.input}</p></div>) : <p className="empty">Ask a question during the presentation. I’ll turn it into the next slide.</p>}</div><form onSubmit={(event) => { event.preventDefault(); if (!researchPrompt.trim()) return; void requestResearch({ presentationId: data.presentation._id, prompt: researchPrompt, url: researchUrl || undefined }).then(() => { setResearchPrompt(""); setResearchUrl(""); }); }}><label>@slide</label><input value={researchPrompt} onChange={(event) => setResearchPrompt(event.target.value)} placeholder="compare Convex to Firebase" /><input value={researchUrl} onChange={(event) => setResearchUrl(event.target.value)} placeholder="Optional URL for Firecrawl" /><button type="submit">Research & add slide ↗</button></form><div className="inbox"><span>AGENTMAIL / INCOMING</span>{data.inbox.length ? data.inbox.map((item) => <p key={item._id}><b>{item.subject}</b><small>{item.sender}</small></p>) : <p className="empty">Webhook-ready inbox. Forward material to your presentation agent.</p>}</div></aside>

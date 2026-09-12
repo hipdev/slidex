@@ -10,10 +10,11 @@ pnpm convex:dev
 pnpm dev:web
 ```
 
-The first Convex command provisions or connects a development deployment and writes `apps/web/.env.local`. Open the local URL, then select **Start a live presentation**.
+The first Convex command provisions or connects a development deployment from `packages/backend` and writes its local environment. The web app consumes the generated API references through `@slidex/backend/api`; it does not host Convex functions itself. Open the local URL, then select **Start a live presentation**.
 
 ## Integrations
 
+- **Convex Auth (beta/alpha track)** issues an anonymous guest identity for every viewer and protects host-only operations. BetterAuth is not used.
 - **Convex** stores presentation state, reactions, votes, inbox items, and agent operations; all are reactive.
 - **Vercel AI SDK + Convex AI Gateway** creates a concise slide from researched material in `convex/research.ts`.
 - **Firecrawl** is called from the research action when `FIRECRAWL_API_KEY` is set with `npx convex env set FIRECRAWL_API_KEY ...`.

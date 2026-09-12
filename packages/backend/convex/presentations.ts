@@ -1,5 +1,7 @@
 import { v } from "convex/values";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 const emoji = v.union(v.literal("fire"), v.literal("mind"), v.literal("heart"), v.literal("question"));
 
@@ -7,10 +9,12 @@ export const createDemo = mutation({
   args: { ownerName: v.string() },
   returns: v.object({ presentationId: v.id("presentations"), slug: v.string() }),
   handler: async (ctx, { ownerName }) => {
+    const ownerId = await getAuthUserId(ctx);
+    if (!ownerId) throw new Error("Sign in before creating a presentation");
     const createdAt = Date.now();
     const slug = `LIVE-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const presentationId = await ctx.db.insert("presentations", {
-      title: "Presentations should be alive.", slug, ownerName, status: "live", createdAt,
+      title: "Presentations should be alive.", slug, ownerName, ownerId, status: "live", createdAt,
     });
     const titleId = await ctx.db.insert("slides", {
       presentationId, order: 0, kind: "title", title: "Your audience is already here.",
@@ -48,29 +52,38 @@ export const getBySlug = query({
 });
 
 export const join = mutation({
-  args: { presentationId: v.id("presentations"), attendeeId: v.string(), name: v.optional(v.string()) },
+  args: { presentationId: v.id("presentations"), name: v.optional(v.string()) },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const existing = await ctx.db.query("audience").withIndex("by_presentation_and_attendee", (q) => q.eq("presentationId", args.presentationId).eq("attendeeId", args.attendeeId)).unique();
+    const attendeeId = await getAuthUserId(ctx);
+    if (!attendeeId) throw new Error("Sign in before joining a presentation");
+    const existing = await ctx.db.query("audience").withIndex("by_presentation_and_attendee", (q) => q.eq("presentationId", args.presentationId).eq("attendeeId", attendeeId)).unique();
     if (existing) await ctx.db.patch(existing._id, { name: args.name, lastSeenAt: Date.now() });
-    else await ctx.db.insert("audience", { ...args, lastSeenAt: Date.now() });
+    else await ctx.db.insert("audience", { ...args, attendeeId, lastSeenAt: Date.now() });
     return null;
   },
 });
 
 export const react = mutation({
-  args: { presentationId: v.id("presentations"), slideId: v.id("slides"), attendeeId: v.string(), emoji },
+  args: { presentationId: v.id("presentations"), slideId: v.id("slides"), emoji },
   returns: v.null(),
-  handler: async (ctx, args) => { await ctx.db.insert("reactions", { ...args, createdAt: Date.now() }); return null; },
+  handler: async (ctx, args) => {
+    const attendeeId = await getAuthUserId(ctx);
+    if (!attendeeId) throw new Error("Sign in before reacting");
+    await ctx.db.insert("reactions", { ...args, attendeeId, createdAt: Date.now() });
+    return null;
+  },
 });
 
 export const vote = mutation({
-  args: { presentationId: v.id("presentations"), slideId: v.id("slides"), attendeeId: v.string(), choiceId: v.string() },
+  args: { presentationId: v.id("presentations"), slideId: v.id("slides"), choiceId: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const existing = await ctx.db.query("votes").withIndex("by_presentation_slide_and_attendee", (q) => q.eq("presentationId", args.presentationId).eq("slideId", args.slideId).eq("attendeeId", args.attendeeId)).unique();
+    const attendeeId = await getAuthUserId(ctx);
+    if (!attendeeId) throw new Error("Sign in before voting");
+    const existing = await ctx.db.query("votes").withIndex("by_presentation_slide_and_attendee", (q) => q.eq("presentationId", args.presentationId).eq("slideId", args.slideId).eq("attendeeId", attendeeId)).unique();
     if (existing) await ctx.db.patch(existing._id, { choiceId: args.choiceId, createdAt: Date.now() });
-    else await ctx.db.insert("votes", { ...args, createdAt: Date.now() });
+    else await ctx.db.insert("votes", { ...args, attendeeId, createdAt: Date.now() });
     return null;
   },
 });
@@ -78,7 +91,11 @@ export const vote = mutation({
 export const setCurrentSlide = mutation({
   args: { presentationId: v.id("presentations"), slideId: v.id("slides") },
   returns: v.null(),
-  handler: async (ctx, args) => { await ctx.db.patch(args.presentationId, { currentSlideId: args.slideId }); return null; },
+  handler: async (ctx, args) => {
+    await requireOwner(ctx, args.presentationId);
+    await ctx.db.patch(args.presentationId, { currentSlideId: args.slideId });
+    return null;
+  },
 });
 
 export const addSlide = internalMutation({
@@ -101,3 +118,9 @@ export const recordInbox = internalMutation({
   returns: v.id("inboxItems"),
   handler: async (ctx, args) => await ctx.db.insert("inboxItems", { ...args, receivedAt: Date.now(), status: "received" }),
 });
+
+async function requireOwner(ctx: MutationCtx, presentationId: Id<"presentations">) {
+  const userId = await getAuthUserId(ctx);
+  const presentation = await ctx.db.get(presentationId);
+  if (!userId || !presentation?.ownerId || presentation.ownerId !== userId) throw new Error("Only the presentation host can perform this action");
+}

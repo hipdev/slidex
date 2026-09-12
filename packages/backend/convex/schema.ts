@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 const slideKind = v.union(
   v.literal("title"),
@@ -9,10 +10,12 @@ const slideKind = v.union(
 );
 
 export default defineSchema({
+  ...authTables,
   presentations: defineTable({
     title: v.string(),
     slug: v.string(),
     ownerName: v.string(),
+    ownerId: v.optional(v.id("users")),
     status: v.union(v.literal("draft"), v.literal("live"), v.literal("ended")),
     currentSlideId: v.optional(v.id("slides")),
     agentInboxAddress: v.optional(v.string()),

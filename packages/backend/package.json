@@ -1,0 +1,32 @@
+{
+  "name": "@slidex/backend",
+  "private": true,
+  "version": "0.1.0",
+  "exports": {
+    "./api": {
+      "types": "./convex/_generated/api.d.ts",
+      "default": "./convex/_generated/api.js"
+    },
+    "./data-model": {
+      "types": "./convex/_generated/dataModel.d.ts"
+    }
+  },
+  "scripts": {
+    "dev": "convex dev",
+    "convex:dev": "convex dev",
+    "convex:deploy": "convex deploy",
+    "typecheck": "tsc --project convex/tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@auth/core": "0.41.1",
+    "@convex-dev/ai-sdk-provider": "^0.1.0",
+    "@convex-dev/auth": "^0.0.95",
+    "ai": "^7.0.0",
+    "convex": "^1.45.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}
