@@ -75,8 +75,22 @@ export const addVisual = mutation({
   handler: async (ctx, args) => {
     await requireOwner(ctx, args.presentationId);
     const last = await ctx.db.query("slides").withIndex("by_presentation_and_order", q => q.eq("presentationId", args.presentationId)).order("desc").first();
-    const slideId = await ctx.db.insert("slides", { ...args, order: (last?.order ?? 0) + 1, kind: "visual", title: args.visual === "constellation" ? "Every idea has gravity." : "Feel the room.", body: args.visual === "constellation" ? "Our collective ideas become a living constellation. Add yours from the room panel." : "Each reaction changes this chart. Your audience is the data." });
+    const slideId = await ctx.db.insert("slides", { ...args, order: (last?.order ?? 0) + 1, kind: "visual", title: args.visual === "constellation" ? "Cada idea tiene gravedad." : "Así se siente la sala.", body: args.visual === "constellation" ? "Nuestras ideas forman una constelación viva. Comparte la tuya en el panel de la sala." : "Cada reacción cambia este gráfico. La audiencia se convierte en los datos." });
     await ctx.db.patch(args.presentationId, { currentSlideId: slideId, showConclusions: false });
     return slideId;
+  },
+});
+
+export const saveSlide = mutation({
+  args: { presentationId: v.id("presentations"), slideId: v.optional(v.id("slides")), title: v.string(), body: v.string() }, returns: v.id("slides"),
+  handler: async (ctx, args) => {
+    await requireOwner(ctx,args.presentationId);
+    const title=args.title.trim(); const body=args.body.trim();
+    if(!title || title.length>100 || body.length>2000)throw new Error("Use a title up to 100 characters and body up to 2000 characters");
+    if(args.slideId){await requireSlide(ctx,args.presentationId,args.slideId);await ctx.db.patch(args.slideId,{title,body});return args.slideId;}
+    const last=await ctx.db.query("slides").withIndex("by_presentation_and_order",q=>q.eq("presentationId",args.presentationId)).order("desc").first();
+    if((last?.order??0)>=49)throw new Error("This deck has reached its 50 slide limit");
+    const slideId=await ctx.db.insert("slides",{presentationId:args.presentationId,title,body,kind:"content",order:(last?.order??0)+1});
+    await ctx.db.patch(args.presentationId,{currentSlideId:slideId,showConclusions:false});return slideId;
   },
 });

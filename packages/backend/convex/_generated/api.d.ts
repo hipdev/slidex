@@ -10,9 +10,12 @@
 
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as inbox from "../inbox.js";
 import type * as live from "../live.js";
+import type * as moments from "../moments.js";
 import type * as presentations from "../presentations.js";
 import type * as research from "../research.js";
+import type * as slideAgent from "../slideAgent.js";
 
 import type {
   ApiFromModules,
@@ -23,9 +26,12 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  inbox: typeof inbox;
   live: typeof live;
+  moments: typeof moments;
   presentations: typeof presentations;
   research: typeof research;
+  slideAgent: typeof slideAgent;
 }>;
 
 /**
@@ -54,4 +60,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
+};

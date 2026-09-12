@@ -15,20 +15,20 @@ export const createDemo = mutation({
     const createdAt = Date.now();
     const slug = `LIVE-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const presentationId = await ctx.db.insert("presentations", {
-      title: "Presentations should be alive.", slug, ownerName, ownerId, status: "live", createdAt,
+      title: "Una presentación que escucha.", slug, ownerName, ownerId, status: "live", createdAt,
     });
     const titleId = await ctx.db.insert("slides", {
-      presentationId, order: 0, kind: "title", title: "Your audience is already here.",
-      body: "Slidex turns attention into a live signal — not a post-meeting survey.",
+      presentationId, order: 0, kind: "title", title: "La próxima gran idea está en esta sala.",
+      body: "Propón una mejora, comparte lo que descubres y construyamos juntos el último slide.",
     });
     await ctx.db.insert("slides", {
-      presentationId, order: 1, kind: "poll", title: "What should we explore next?",
-      body: "The next chapter is chosen in the room.",
-      choices: [{ id: "agents", label: "Slide agents" }, { id: "research", label: "Living research" }, { id: "chaos", label: "Chaos mode" }],
+      presentationId, order: 1, kind: "poll", title: "¿Hacia dónde vamos ahora?",
+      body: "Vota por el próximo capítulo. El rumbo se decide aquí.",
+      choices: [{ id: "agents", label: "Slides que responden" }, { id: "research", label: "Investigar en vivo" }, { id: "chaos", label: "Momentos inesperados" }],
     });
     await ctx.db.insert("slides", {
-      presentationId, order: 2, kind: "content", title: "A slide can answer back.",
-      body: "Ask @slide to research a topic, turn an incoming email into a brief, or create a live comparison while presenting.",
+      presentationId, order: 2, kind: "content", title: "Una charla. Muchas perspectivas.",
+      body: "Usa el copiloto para investigar, convertir un correo en slide o dirigir la charla con tu voz. La audiencia escribe el cierre contigo.",
     });
     await ctx.db.patch(presentationId, { currentSlideId: titleId });
     return { presentationId, slug };
