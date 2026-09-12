@@ -1,0 +1,17 @@
+{
+  "name": "slidex",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.5.1",
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=slidex-web",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "convex:dev": "pnpm --filter=slidex-web convex dev",
+    "convex:deploy": "pnpm --filter=slidex-web convex deploy"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.16"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules
+.turbo
+.next
+out
+.env.local
+.env*.local
+apps/web/convex/_generated
+apps/web/.env.local
