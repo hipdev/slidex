@@ -82,3 +82,8 @@ export const generateSlide = internalAction({
     return null;
   },
 });
+
+export const resolveRoom = internalQuery({
+  args: { inboxId: v.string() }, returns: v.union(v.id("presentations"), v.null()),
+  handler: async (ctx, args) => (await ctx.db.query("presentations").withIndex("by_agentInboxId", q => q.eq("agentInboxId", args.inboxId)).unique())?._id ?? null,
+});

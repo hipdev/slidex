@@ -16,7 +16,9 @@
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
     "typecheck": "tsc --project convex/tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "deploy:demo": "static-hosting upload --dist ../../apps/web/out --build-command \"pnpm --filter=slidex-web build\"",
+    "deploy": "static-hosting deploy --dist ../../apps/web/out --build-command \"pnpm --filter=slidex-web build\""
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.66",
@@ -24,6 +26,8 @@
     "@convex-dev/agent": "^0.7.2",
     "@convex-dev/ai-sdk-provider": "^0.1.0",
     "@convex-dev/auth": "^0.0.95",
+    "@convex-dev/rate-limiter": "^0.3.2",
+    "@convex-dev/static-hosting": "^0.2.1",
     "ai": "^7.0.0",
     "convex": "^1.45.0",
     "svix": "^2.5.0",

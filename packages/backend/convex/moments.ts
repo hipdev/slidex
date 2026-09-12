@@ -1,3 +1,4 @@
+import { limits } from "./limits";
 import { v } from "convex/values";
 import { mutation, internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
@@ -10,6 +11,7 @@ export const request = mutation({
     const room = await requireOwner(ctx,args.presentationId);
     if (!room.voiceEnabled) throw new Error("Activate live moments first");
     if (!args.transcript.trim() || args.transcript.length>1200) throw new Error("Use a short phrase, up to 1200 characters");
+    await limits.limit(ctx,"ai",{key:room.ownerId!,throws:true});
     const active = await ctx.db.query("operations").withIndex("by_presentation_and_creation",q=>q.eq("presentationId",args.presentationId)).order("desc").take(10);
     if (active.some(op=>op.kind==="slide-agent" && (op.status==="queued" || op.status==="running"))) return null;
     const operationId = await ctx.db.insert("operations",{presentationId:args.presentationId,kind:"slide-agent",status:"queued",input:args.transcript,createdAt:Date.now()});

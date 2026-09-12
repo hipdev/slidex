@@ -5,3 +5,5 @@ out
 .env.local
 .env*.local
 apps/web/.env.local
+
+*.tsbuildinfo

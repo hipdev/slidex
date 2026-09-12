@@ -1,3 +1,4 @@
+import { limits } from "./limits";
 import { generate } from "./slideAgent";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
@@ -13,6 +14,7 @@ export const request = mutation({
     if (!userId || !presentation?.ownerId || presentation.ownerId !== userId) throw new Error("Only the presentation host can ask the Slide Agent");
     if (!args.prompt.trim() || args.prompt.length > 1000) throw new Error("Write a topic of 1–1000 characters");
     if (args.url && !/^https?:\/\//i.test(args.url)) throw new Error("Use an HTTP or HTTPS source URL");
+    await limits.limit(ctx,"ai",{key:userId,throws:true});
     const operationId = await ctx.db.insert("operations", { presentationId: args.presentationId, kind: "research", status: "queued", input: args.prompt, createdAt: Date.now() });
     await ctx.scheduler.runAfter(0, internal.research.run, { operationId, presentationId: args.presentationId, prompt: args.prompt, url: args.url });
     return operationId;

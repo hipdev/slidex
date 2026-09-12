@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as inbox from "../inbox.js";
+import type * as limits from "../limits.js";
 import type * as live from "../live.js";
 import type * as moments from "../moments.js";
 import type * as presentations from "../presentations.js";
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
   inbox: typeof inbox;
+  limits: typeof limits;
   live: typeof live;
   moments: typeof moments;
   presentations: typeof presentations;
@@ -62,4 +64,6 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
+  staticHosting: import("@convex-dev/static-hosting/_generated/component.js").ComponentApi<"staticHosting">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
 };

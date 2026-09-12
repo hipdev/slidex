@@ -1,3 +1,4 @@
+import { limits } from "./limits";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query } from "./_generated/server";
@@ -24,6 +25,7 @@ export const contribute = mutation({
     await requireSlide(ctx, args.presentationId, args.slideId);
     const text = args.text.trim();
     if (!text || text.length > 500) throw new Error("Write between 1 and 500 characters");
+    await limits.limit(ctx,"contributions",{key:authorId,throws:true});
     return await ctx.db.insert("contributions", { ...args, text, authorId, authorName: args.authorName.trim().slice(0, 40) || "Guest", status: "pending", votes: 0 });
   },
 });
@@ -75,6 +77,7 @@ export const addVisual = mutation({
   handler: async (ctx, args) => {
     await requireOwner(ctx, args.presentationId);
     const last = await ctx.db.query("slides").withIndex("by_presentation_and_order", q => q.eq("presentationId", args.presentationId)).order("desc").first();
+    if ((last?.order ?? 0) >= 49) throw new Error("This deck has reached its 50 slide limit");
     const slideId = await ctx.db.insert("slides", { ...args, order: (last?.order ?? 0) + 1, kind: "visual", title: args.visual === "constellation" ? "Cada idea tiene gravedad." : "Así se siente la sala.", body: args.visual === "constellation" ? "Nuestras ideas forman una constelación viva. Comparte la tuya en el panel de la sala." : "Cada reacción cambia este gráfico. La audiencia se convierte en los datos." });
     await ctx.db.patch(args.presentationId, { currentSlideId: slideId, showConclusions: false });
     return slideId;

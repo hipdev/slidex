@@ -1,3 +1,4 @@
+import { limits } from "./limits";
 import { v } from "convex/values";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
@@ -12,6 +13,7 @@ export const createDemo = mutation({
   handler: async (ctx, { ownerName }) => {
     const ownerId = await getAuthUserId(ctx);
     if (!ownerId) throw new Error("Sign in before creating a presentation");
+    await limits.limit(ctx,"rooms",{key:ownerId,throws:true});
     const createdAt = Date.now();
     const slug = `LIVE-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const presentationId = await ctx.db.insert("presentations", {
@@ -77,6 +79,7 @@ export const react = mutation({
     const attendeeId = await getAuthUserId(ctx);
     if (!attendeeId) throw new Error("Sign in before reacting");
     await requireSlide(ctx, args.presentationId, args.slideId);
+    await limits.limit(ctx,"reactions",{key:attendeeId,throws:true});
     await ctx.db.insert("reactions", { ...args, attendeeId, createdAt: Date.now() });
     return null;
   },
@@ -103,7 +106,7 @@ export const setCurrentSlide = mutation({
   handler: async (ctx, args) => {
     await requireOwner(ctx, args.presentationId);
     await requireSlide(ctx, args.presentationId, args.slideId);
-    await ctx.db.patch(args.presentationId, { currentSlideId: args.slideId });
+    await ctx.db.patch(args.presentationId, { currentSlideId: args.slideId, showConclusions: false });
     return null;
   },
 });
@@ -113,6 +116,7 @@ export const addSlide = internalMutation({
   returns: v.id("slides"),
   handler: async (ctx, args) => {
     const last = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", args.presentationId)).order("desc").first();
+    if ((last?.order ?? 0) >= 49) throw new Error("This deck has reached its 50 slide limit");
     return await ctx.db.insert("slides", { ...args, order: (last?.order ?? -1) + 1, generatedAt: Date.now() });
   },
 });

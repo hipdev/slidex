@@ -1,5 +1,6 @@
 import { httpRouter } from "convex/server";
-import { internal } from "./_generated/api";
+import { registerStaticRoutes } from "@convex-dev/static-hosting";
+import { components, internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { auth } from "./auth";
@@ -28,19 +29,21 @@ http.route({
       throw error;
     }
 
-    const body: unknown = JSON.parse(rawBody);
+    let body: unknown;
+    try { body = JSON.parse(rawBody); } catch { return new Response("Invalid JSON", { status: 400 }); }
     if (!isAgentMailEvent(body)) return new Response("Invalid AgentMail payload", { status: 400 });
     if (body.event_type !== "message.received") return json({ ok: true, ignored: true });
 
-    const presentationId = request.headers.get("x-slidex-presentation-id");
+    const routedId = body.message.inbox_id ? await ctx.runQuery(internal.inbox.resolveRoom, { inboxId: body.message.inbox_id }) : null;
+    const presentationId = routedId ?? request.headers.get("x-slidex-presentation-id");
     if (!presentationId) return new Response("Missing X-Slidex-Presentation-Id", { status: 400 });
 
     await ctx.runMutation(internal.presentations.recordInbox, {
       presentationId: presentationId as Id<"presentations">,
-      sender: body.message.from_[0] ?? "Unknown sender",
+      sender: body.message.from ?? body.message.from_?.[0] ?? "Unknown sender",
       subject: body.message.subject ?? "Incoming topic",
       text: body.message.text ?? body.message.preview ?? "AgentMail received an email without an inline text body.",
-      agentMailEventId: body.event_id,
+      agentMailEventId: body.message.inbox_id && body.message.message_id ? `mail:${body.message.inbox_id}:${body.message.message_id}` : body.event_id,
     });
     return json({ ok: true });
   }),
@@ -49,7 +52,7 @@ http.route({
 type AgentMailEvent = {
   event_type: string;
   event_id: string;
-  message: { from_: string[]; subject?: string; preview?: string; text?: string };
+  message: { from?: string; from_?: string[]; inbox_id?: string; message_id?: string; subject?: string; preview?: string; text?: string };
 };
 
 function isAgentMailEvent(value: unknown): value is AgentMailEvent {
@@ -57,7 +60,9 @@ function isAgentMailEvent(value: unknown): value is AgentMailEvent {
   const body = value as Record<string, unknown>;
   if (typeof body.event_type !== "string" || typeof body.event_id !== "string" || !body.message || typeof body.message !== "object") return false;
   const message = body.message as Record<string, unknown>;
-  return Array.isArray(message.from_) && message.from_.every((address) => typeof address === "string")
+  return (typeof message.from === "string" || (Array.isArray(message.from_) && message.from_.every((address) => typeof address === "string")))
+    && (message.inbox_id === undefined || typeof message.inbox_id === "string")
+    && (message.message_id === undefined || typeof message.message_id === "string")
     && (message.subject === undefined || typeof message.subject === "string")
     && (message.preview === undefined || typeof message.preview === "string")
     && (message.text === undefined || typeof message.text === "string");
@@ -66,5 +71,7 @@ function isAgentMailEvent(value: unknown): value is AgentMailEvent {
 function json(body: Record<string, boolean>) {
   return new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json" } });
 }
+
+registerStaticRoutes(http, components.staticHosting);
 
 export default http;

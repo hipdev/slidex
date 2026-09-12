@@ -4,9 +4,12 @@ import { useMutation } from "convex/react";
 import { api } from "@slidex/backend/api";
 import type { Doc, Id } from "@slidex/backend/data-model";
 
-type Recognition = { lang:string; continuous:boolean; interimResults:boolean; onresult:((e:{resultIndex:number;results:{length:number;[n:number]:{isFinal:boolean;[n:number]:{transcript:string}}}})=>void)|null; onerror:((e:{error:string})=>void)|null; onend:(()=>void)|null; start:()=>void; stop:()=>void; abort:()=>void };
+type Recognition = { lang:string; continuous:boolean; interimResults:boolean; onresult:((e:{resultIndex:number;results:{length:number;[n:number]:{isFinal:boolean;[n:number]:{transcript:string}}}})=>void)|null; onerror:((e:{error:string})=>void)|null; onend:(()=>void)|null; onstart:(()=>void)|null; start:()=>void; stop:()=>void; abort:()=>void };
 export function VoiceControls({ room, slides, report }: { room: Doc<"presentations">; slides: Doc<"slides">[]; report:(message:string)=>void }) {
   const [listening,setListening]=useState(false);
+  const [starting,setStarting]=useState(false);
+  const [savingMode,setSavingMode]=useState(false);
+  const startTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const [supported,setSupported]=useState(false);
   const [transcript,setTranscript]=useState("");
   const [command,setCommand]=useState("");
@@ -19,8 +22,8 @@ export function VoiceControls({ room, slides, report }: { room: Doc<"presentatio
   const research=useMutation(api.research.request);
   const visual=useMutation(api.live.addVisual);
   const props=useRef({room,slides}); props.current={room,slides};
-  useEffect(()=>{setSupported(!!((window as SpeechWindow).SpeechRecognition || (window as SpeechWindow).webkitSpeechRecognition));return()=>recognition.current?.abort();},[]);
-  const execute=async(text:string)=>{
+  useEffect(()=>{setSupported(!!((window as SpeechWindow).SpeechRecognition || (window as SpeechWindow).webkitSpeechRecognition));return()=>{ if(startTimer.current)clearTimeout(startTimer.current); recognition.current?.abort(); };},[]);
+  const execute=async(text:string, manual=false)=>{
     const {room,slides}=props.current; const normalized=text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
     const index=slides.findIndex(s=>s._id===room.currentSlideId);
     const words=normalized.replace(/^slidex[,\s]*/,"").replace(/[.!?]+$/g,"");
@@ -35,20 +38,21 @@ export function VoiceControls({ room, slides, report }: { room: Doc<"presentatio
     else if(/^(investiga|crea un slide sobre)\s+/.test(words))await research({presentationId:room._id,prompt:text.replace(/^(slidex[,\s]*)?(investiga|crea un slide sobre)\s+/i,"")});
     else if(room.voiceEnabled && (words.startsWith("meme ") || Date.now()-lastMoment.current>15000)){
       lastMoment.current=Date.now(); await moments({presentationId:room._id,transcript:text.slice(0,1200),force:words.startsWith("meme ")});
-    } else report("Comandos: siguiente, anterior, cierre, constelación, pulso o investiga…");
+    } else if(manual) report(words.startsWith("meme ") ? "Activa Momentos en vivo para buscar un meme contextual." : "Comandos: siguiente, anterior, cierre, constelación, pulso o investiga…");
   };
   const callback=useRef(execute);callback.current=execute;
   const toggle=()=>{
-    if(listening){recognition.current?.stop();setListening(false);return;}
+    if(listening || starting){setListening(false);setStarting(false);if(startTimer.current)clearTimeout(startTimer.current);recognition.current?.abort();return;}
     const Constructor=(window as SpeechWindow).SpeechRecognition || (window as SpeechWindow).webkitSpeechRecognition;
     if(!Constructor)return;
     const mic=new Constructor();mic.lang="es-CO";mic.continuous=true;mic.interimResults=false;
     mic.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal){const text=e.results[i][0].transcript;setTranscript(text);void callback.current(text).catch(error=>report(String(error)));}}};
-    mic.onerror=e=>{setListening(false);report(e.error==="not-allowed"?"El micrófono está bloqueado. Permítelo en el navegador o usa el campo de comandos.":`La escucha se detuvo (${e.error}). Puedes usar el campo de comandos.`);};
-    mic.onend=()=>setListening(false);recognition.current=mic;
-    try{mic.start();setListening(true);}catch(error){report(String(error));}
+    mic.onstart=()=>{if(startTimer.current)clearTimeout(startTimer.current);setStarting(false);setListening(true);};
+    mic.onerror=e=>{if(startTimer.current)clearTimeout(startTimer.current);setStarting(false);setListening(false);if(e.error==="aborted")return;report(e.error==="not-allowed"?"El micrófono está bloqueado. Permítelo en el navegador o usa el campo de comandos.":`La escucha se detuvo (${e.error}). Puedes usar el campo de comandos.`);};
+    mic.onend=()=>{if(startTimer.current)clearTimeout(startTimer.current);setStarting(false);setListening(false);};recognition.current=mic;
+    try{setStarting(true);mic.start();startTimer.current=setTimeout(()=>{setStarting(false);setListening(false);mic.abort();report("El navegador no inició la escucha. Revisa el permiso del micrófono o usa los comandos por texto.");},10000);}catch(error){setStarting(false);report(String(error));}
   };
-  return <section className="voice-controls"><div className="voice-heading"><span>Tu voz, al mando</span><button aria-pressed={listening} disabled={!supported} onClick={toggle}>{listening?"■ Detener micrófono":"♩ Activar micrófono"}</button></div><p>{supported?"Escucha solo al activarlo. El navegador procesa la voz; las frases de momentos se envían a OpenAI y Firecrawl.":"Este navegador no ofrece reconocimiento de voz. Usa los mismos comandos por texto o abre Chrome."}</p><label className="moment-toggle"><input type="checkbox" checked={!!room.voiceEnabled} onChange={e=>void settings({presentationId:room._id,voiceEnabled:e.target.checked,clearMoment:!e.target.checked}).catch(error=>report(String(error)))} /> Momentos en vivo · memes contextuales</label>{transcript && <blockquote aria-live="polite">“{transcript}”</blockquote>}<form onSubmit={async e=>{e.preventDefault();setBusy(true);try{await execute(command);setTranscript(command);setCommand("");}catch(error){report(String(error));}finally{setBusy(false);}}}><label htmlFor="voice-command">Comando o frase de prueba</label><div className="command-row"><input id="voice-command" value={command} maxLength={1000} onChange={e=>setCommand(e.target.value)} placeholder="siguiente · investiga… · meme…"/><button disabled={busy || !command.trim()}>Ejecutar</button></div></form><small>Di «siguiente», «anterior», «cierre», «constelación» o «investiga…».</small></section>;
+  return <section className="voice-controls"><div className="voice-heading"><span>Tu voz, al mando</span><button aria-pressed={listening || starting} disabled={!supported} onClick={toggle}>{starting?"Cancelar inicio…":listening?"■ Detener micrófono":"♩ Activar micrófono"}</button></div><p>{supported?"Escucha solo al activarlo. El navegador procesa la voz; las frases de momentos se envían a OpenAI y Firecrawl.":"Este navegador no ofrece reconocimiento de voz. Usa los mismos comandos por texto o abre Chrome."}</p><label className="moment-toggle"><input type="checkbox" checked={!!room.voiceEnabled} disabled={savingMode} onChange={async e=>{setSavingMode(true);try{await settings({presentationId:room._id,voiceEnabled:e.target.checked,clearMoment:!e.target.checked});}catch(error){report(String(error));}finally{setSavingMode(false);}}} /> Momentos en vivo · memes contextuales</label>{transcript && <blockquote aria-live="polite">“{transcript}”</blockquote>}<form onSubmit={async e=>{e.preventDefault();setBusy(true);try{await execute(command,true);setTranscript(command);setCommand("");}catch(error){report(String(error));}finally{setBusy(false);}}}><label htmlFor="voice-command">Comando o frase de prueba</label><div className="command-row"><input id="voice-command" value={command} maxLength={1000} onChange={e=>setCommand(e.target.value)} placeholder="siguiente · investiga… · meme…"/><button disabled={busy || savingMode || !command.trim()}>Ejecutar</button></div></form><small>Di «siguiente», «anterior», «cierre», «constelación» o «investiga…».</small></section>;
 }
 type SpeechWindow=Window & {SpeechRecognition?:new()=>Recognition;webkitSpeechRecognition?:new()=>Recognition};
 
