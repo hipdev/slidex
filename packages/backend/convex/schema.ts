@@ -7,6 +7,7 @@ const slideKind = v.union(
   v.literal("content"),
   v.literal("poll"),
   v.literal("research"),
+  v.literal("visual"),
 );
 
 export default defineSchema({
@@ -20,7 +21,11 @@ export default defineSchema({
     currentSlideId: v.optional(v.id("slides")),
     agentInboxAddress: v.optional(v.string()),
     createdAt: v.number(),
-  }).index("by_slug", ["slug"]),
+    showConclusions: v.optional(v.boolean()),
+    voiceEnabled: v.optional(v.boolean()),
+    agentInboxId: v.optional(v.string()),
+    moment: v.optional(v.object({ caption: v.string(), imageUrl: v.optional(v.string()), sourceUrl: v.optional(v.string()), createdAt: v.number() })),
+  }).index("by_slug", ["slug"]).index("by_agentInboxId", ["agentInboxId"]),
   slides: defineTable({
     presentationId: v.id("presentations"),
     order: v.number(),
@@ -30,7 +35,22 @@ export default defineSchema({
     choices: v.optional(v.array(v.object({ id: v.string(), label: v.string() }))),
     sourceUrls: v.optional(v.array(v.string())),
     generatedAt: v.optional(v.number()),
+    visual: v.optional(v.union(v.literal("constellation"), v.literal("pulse"))),
   }).index("by_presentation_and_order", ["presentationId", "order"]),
+  contributions: defineTable({
+    presentationId: v.id("presentations"),
+    slideId: v.id("slides"),
+    authorId: v.id("users"),
+    authorName: v.string(),
+    kind: v.union(v.literal("suggestion"), v.literal("conclusion"), v.literal("question"), v.literal("fact")),
+    text: v.string(),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
+    votes: v.number(),
+  }).index("by_presentationId", ["presentationId"]),
+  endorsements: defineTable({
+    contributionId: v.id("contributions"),
+    userId: v.id("users"),
+  }).index("by_contributionId_and_userId", ["contributionId", "userId"]),
   audience: defineTable({
     presentationId: v.id("presentations"),
     attendeeId: v.string(),
@@ -55,7 +75,8 @@ export default defineSchema({
     .index("by_presentation_slide_and_attendee", ["presentationId", "slideId", "attendeeId"]),
   operations: defineTable({
     presentationId: v.id("presentations"),
-    kind: v.union(v.literal("research"), v.literal("inbox"), v.literal("slide-agent")),
+    kind: v.union(v.literal("research"),
+  v.literal("visual"), v.literal("inbox"), v.literal("slide-agent")),
     status: v.union(v.literal("queued"), v.literal("running"), v.literal("complete"), v.literal("failed")),
     input: v.string(),
     output: v.optional(v.string()),

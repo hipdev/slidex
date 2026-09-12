@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
+import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import schema from "./schema";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 const emoji = v.union(v.literal("fire"), v.literal("mind"), v.literal("heart"), v.literal("question"));
@@ -37,7 +38,7 @@ export const createDemo = mutation({
 export const getBySlug = query({
   args: { slug: v.string() },
   returns: v.union(v.null(), v.object({
-    presentation: v.any(), slides: v.array(v.any()), reactions: v.array(v.any()), votes: v.array(v.any()), inbox: v.array(v.any()), operations: v.array(v.any()),
+    presentation: schema.doc("presentations"), slides: v.array(schema.doc("slides")), reactions: v.array(schema.doc("reactions")), votes: v.array(schema.doc("votes")), inbox: v.array(schema.doc("inboxItems")), operations: v.array(schema.doc("operations")), isHost: v.boolean(), participantCount: v.number(),
   })),
   handler: async (ctx, { slug }) => {
     const presentation = await ctx.db.query("presentations").withIndex("by_slug", (q) => q.eq("slug", slug)).unique();
@@ -45,9 +46,12 @@ export const getBySlug = query({
     const slides = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", presentation._id)).take(50);
     const reactions = await ctx.db.query("reactions").withIndex("by_presentation_and_slide", (q) => q.eq("presentationId", presentation._id)).take(200);
     const votes = await ctx.db.query("votes").withIndex("by_presentation_and_slide", (q) => q.eq("presentationId", presentation._id)).take(200);
-    const inbox = await ctx.db.query("inboxItems").withIndex("by_presentation_and_received", (q) => q.eq("presentationId", presentation._id)).order("desc").take(8);
+    const userId = await getAuthUserId(ctx);
+    const isHost = !!userId && presentation.ownerId === userId;
+    const attendees = await ctx.db.query("audience").withIndex("by_presentation_and_attendee", q => q.eq("presentationId", presentation._id)).take(500);
+    const inbox = isHost ? await ctx.db.query("inboxItems").withIndex("by_presentation_and_received", (q) => q.eq("presentationId", presentation._id)).order("desc").take(8) : [];
     const operations = await ctx.db.query("operations").withIndex("by_presentation_and_creation", (q) => q.eq("presentationId", presentation._id)).order("desc").take(8);
-    return { presentation, slides, reactions, votes, inbox, operations };
+    return { presentation, slides, reactions, votes, inbox, operations, isHost, participantCount: attendees.length };
   },
 });
 
@@ -57,6 +61,8 @@ export const join = mutation({
   handler: async (ctx, args) => {
     const attendeeId = await getAuthUserId(ctx);
     if (!attendeeId) throw new Error("Sign in before joining a presentation");
+    const room = await ctx.db.get(args.presentationId);
+    if (!room) throw new Error("Room not found");
     const existing = await ctx.db.query("audience").withIndex("by_presentation_and_attendee", (q) => q.eq("presentationId", args.presentationId).eq("attendeeId", attendeeId)).unique();
     if (existing) await ctx.db.patch(existing._id, { name: args.name, lastSeenAt: Date.now() });
     else await ctx.db.insert("audience", { ...args, attendeeId, lastSeenAt: Date.now() });
@@ -70,6 +76,7 @@ export const react = mutation({
   handler: async (ctx, args) => {
     const attendeeId = await getAuthUserId(ctx);
     if (!attendeeId) throw new Error("Sign in before reacting");
+    await requireSlide(ctx, args.presentationId, args.slideId);
     await ctx.db.insert("reactions", { ...args, attendeeId, createdAt: Date.now() });
     return null;
   },
@@ -81,6 +88,8 @@ export const vote = mutation({
   handler: async (ctx, args) => {
     const attendeeId = await getAuthUserId(ctx);
     if (!attendeeId) throw new Error("Sign in before voting");
+    const slide = await requireSlide(ctx, args.presentationId, args.slideId);
+    if (slide.kind !== "poll" || !slide.choices?.some(c => c.id === args.choiceId)) throw new Error("Invalid poll choice");
     const existing = await ctx.db.query("votes").withIndex("by_presentation_slide_and_attendee", (q) => q.eq("presentationId", args.presentationId).eq("slideId", args.slideId).eq("attendeeId", attendeeId)).unique();
     if (existing) await ctx.db.patch(existing._id, { choiceId: args.choiceId, createdAt: Date.now() });
     else await ctx.db.insert("votes", { ...args, attendeeId, createdAt: Date.now() });
@@ -93,6 +102,7 @@ export const setCurrentSlide = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     await requireOwner(ctx, args.presentationId);
+    await requireSlide(ctx, args.presentationId, args.slideId);
     await ctx.db.patch(args.presentationId, { currentSlideId: args.slideId });
     return null;
   },
@@ -130,8 +140,16 @@ export const recordInbox = internalMutation({
   },
 });
 
-async function requireOwner(ctx: MutationCtx, presentationId: Id<"presentations">) {
+export async function requireOwner(ctx: MutationCtx | QueryCtx, presentationId: Id<"presentations">) {
   const userId = await getAuthUserId(ctx);
   const presentation = await ctx.db.get(presentationId);
   if (!userId || !presentation?.ownerId || presentation.ownerId !== userId) throw new Error("Only the presentation host can perform this action");
+  return presentation;
+}
+
+export async function requireSlide(ctx: MutationCtx | QueryCtx, presentationId: Id<"presentations">, slideId: Id<"slides">) {
+  const room = await ctx.db.get(presentationId);
+  const slide = await ctx.db.get(slideId);
+  if (!room || room.status === "ended" || !slide || slide.presentationId !== presentationId) throw new Error("Slide is not in an active room");
+  return slide;
 }

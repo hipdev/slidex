@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as live from "../live.js";
 import type * as presentations from "../presentations.js";
 import type * as research from "../research.js";
 
@@ -22,6 +23,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  live: typeof live;
   presentations: typeof presentations;
   research: typeof research;
 }>;
