@@ -1,7 +1,7 @@
 import { generateText } from "ai";
 import { convexGateway } from "@convex-dev/ai-sdk-provider";
 import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { action, internalAction, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -48,7 +48,14 @@ async function scrape(url: string | undefined, prompt: string) {
   const body = url ? { url, formats: ["markdown"] } : { query: prompt, limit: 3, scrapeOptions: { formats: ["markdown"] } };
   const response = await fetch(endpoint, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!response.ok) throw new Error(`Firecrawl returned ${response.status}`);
-  const payload = await response.json() as { markdown?: string; data?: Array<{ markdown?: string; url?: string }>; url?: string };
-  const pages = payload.data ?? [payload];
+  const payload = await response.json() as FirecrawlScrapePayload | FirecrawlSearchPayload;
+  const scrapedPage = (payload as FirecrawlScrapePayload).data;
+  const pages: FirecrawlPage[] = url
+    ? (scrapedPage ? [scrapedPage] : [])
+    : (payload as FirecrawlSearchPayload).data?.web ?? [];
   return { markdown: pages.map((page) => page.markdown ?? "").join("\n\n"), urls: pages.flatMap((page) => page.url ? [page.url] : url ? [url] : []) };
 }
+
+type FirecrawlPage = { markdown?: string; url?: string };
+type FirecrawlScrapePayload = { data?: FirecrawlPage };
+type FirecrawlSearchPayload = { data?: { web?: FirecrawlPage[] } };
