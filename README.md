@@ -18,7 +18,7 @@ The first Convex command provisions or connects a development deployment from `p
 - **Convex** stores presentation state, reactions, votes, inbox items, and agent operations; all are reactive.
 - **Vercel AI SDK + Convex AI Gateway** creates a concise slide from researched material in `convex/research.ts`.
 - **Firecrawl** is called from the research action when `FIRECRAWL_API_KEY` is set with `npx convex env set FIRECRAWL_API_KEY ...`.
-- **AgentMail** can post normalized inbound email data to `POST $NEXT_PUBLIC_CONVEX_SITE_URL/agentmail` with the `x-slidex-webhook-secret` header. Set the matching `AGENTMAIL_WEBHOOK_SECRET` in Convex. Its webhook transform should send `{ presentationId, from, subject, text }`.
+- **[AgentMail](https://www.agentmail.to/)** sends its official `message.received` webhook payload to `POST https://<your-convex-deployment>.convex.site/agentmail`. Configure the AgentMail signing secret as `AGENTMAIL_WEBHOOK_SECRET` in Convex; the endpoint verifies the raw Svix signature before accepting the event. Add `X-Slidex-Presentation-Id` as an AgentMail custom delivery header to route the inbox to one presentation. Replayed `event_id` values are safely deduplicated.
 
 ## Deploying to GPT Sites
 

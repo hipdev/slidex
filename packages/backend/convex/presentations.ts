@@ -114,9 +114,20 @@ export const updateOperation = internalMutation({
 });
 
 export const recordInbox = internalMutation({
-  args: { presentationId: v.id("presentations"), sender: v.string(), subject: v.string(), text: v.string() },
+  args: { presentationId: v.id("presentations"), sender: v.string(), subject: v.string(), text: v.string(), agentMailEventId: v.optional(v.string()) },
   returns: v.id("inboxItems"),
-  handler: async (ctx, args) => await ctx.db.insert("inboxItems", { ...args, receivedAt: Date.now(), status: "received" }),
+  handler: async (ctx, args) => {
+    const presentation = await ctx.db.get(args.presentationId);
+    if (!presentation) throw new Error("Presentation not found");
+    if (args.agentMailEventId) {
+      const existing = await ctx.db
+        .query("inboxItems")
+        .withIndex("by_agent_mail_event_id", (q) => q.eq("agentMailEventId", args.agentMailEventId))
+        .unique();
+      if (existing) return existing._id;
+    }
+    return await ctx.db.insert("inboxItems", { ...args, receivedAt: Date.now(), status: "received" });
+  },
 });
 
 async function requireOwner(ctx: MutationCtx, presentationId: Id<"presentations">) {

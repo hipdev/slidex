@@ -67,7 +67,10 @@ export default defineSchema({
     sender: v.string(),
     subject: v.string(),
     text: v.string(),
+    agentMailEventId: v.optional(v.string()),
     receivedAt: v.number(),
     status: v.union(v.literal("received"), v.literal("processed")),
-  }).index("by_presentation_and_received", ["presentationId"]),
+  })
+    .index("by_presentation_and_received", ["presentationId"])
+    .index("by_agent_mail_event_id", ["agentMailEventId"]),
 });
