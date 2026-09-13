@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as inbox from "../inbox.js";
 import type * as interventions from "../interventions.js";
+import type * as language from "../language.js";
 import type * as limits from "../limits.js";
 import type * as live from "../live.js";
 import type * as moments from "../moments.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   inbox: typeof inbox;
   interventions: typeof interventions;
+  language: typeof language;
   limits: typeof limits;
   live: typeof live;
   moments: typeof moments;

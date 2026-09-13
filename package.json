@@ -10,7 +10,7 @@
     "typecheck": "turbo run typecheck",
     "convex:dev": "pnpm --filter=@slidex/backend convex:dev",
     "convex:deploy": "pnpm --filter=@slidex/backend convex:deploy",
-    "test": "pnpm --filter=@slidex/backend test",
+    "test": "pnpm --filter=@slidex/backend test && pnpm --filter=slidex-web test",
     "deploy:demo": "pnpm --filter=@slidex/backend deploy:demo",
     "deploy": "pnpm --filter=@slidex/backend deploy"
   },

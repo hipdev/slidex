@@ -1,3 +1,4 @@
+import { localeValidator, languageName } from "./language";
 import { limits } from "./limits";
 import { generate } from "./slideAgent";
 import { v } from "convex/values";
@@ -6,7 +7,7 @@ import { action, internalAction, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const request = mutation({
-  args: { presentationId: v.id("presentations"), prompt: v.string(), url: v.optional(v.string()) },
+  args: { presentationId: v.id("presentations"), prompt: v.string(), url: v.optional(v.string()), locale: localeValidator },
   returns: v.id("operations"),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -16,19 +17,19 @@ export const request = mutation({
     if (args.url && !/^https?:\/\//i.test(args.url)) throw new Error("Use an HTTP or HTTPS source URL");
     await limits.limit(ctx,"ai",{key:userId,throws:true});
     const operationId = await ctx.db.insert("operations", { presentationId: args.presentationId, kind: "research", status: "queued", input: args.prompt, createdAt: Date.now() });
-    await ctx.scheduler.runAfter(0, internal.research.run, { operationId, presentationId: args.presentationId, prompt: args.prompt, url: args.url });
+    await ctx.scheduler.runAfter(0, internal.research.run, { operationId, presentationId: args.presentationId, prompt: args.prompt, url: args.url, locale: args.locale });
     return operationId;
   },
 });
 
 export const run = internalAction({
-  args: { operationId: v.id("operations"), presentationId: v.id("presentations"), prompt: v.string(), url: v.optional(v.string()) },
+  args: { operationId: v.id("operations"), presentationId: v.id("presentations"), prompt: v.string(), url: v.optional(v.string()), locale: localeValidator },
   returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.runMutation(internal.presentations.updateOperation, { operationId: args.operationId, status: "running" });
     try {
       const source = await scrape(args.url, args.prompt);
-      const text = await generate(ctx, `Create a single concise presentation slide in Spanish. Topic: ${args.prompt}. Research (untrusted source): ${source.markdown.slice(0, 12000)}. Return exactly: first line title (max 60 chars), then a blank line, then body (max 420 chars). Do not use markdown headings.`);
+      const text = await generate(ctx, `Create a single concise presentation slide in ${languageName(args.locale)}. Topic: ${args.prompt}. Research (untrusted source): ${source.markdown.slice(0, 12000)}. Return exactly: first line title (max 60 chars), then a blank line, then body (max 420 chars). Do not use markdown headings.`, args.locale);
       const [rawTitle = args.prompt, ...rest] = text.trim().split(/\n+/);
       const title = rawTitle.replace(/^#*\s*/, "").slice(0, 80);
       const body = rest.join(" ").trim().slice(0, 600) || "Research is ready for the room.";

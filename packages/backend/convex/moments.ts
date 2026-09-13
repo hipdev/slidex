@@ -1,3 +1,4 @@
+import { localeValidator, languageName } from "./language";
 import { limits } from "./limits";
 import { v } from "convex/values";
 import { mutation, internalAction, internalMutation, internalQuery } from "./_generated/server";
@@ -6,7 +7,7 @@ import { requireOwner } from "./presentations";
 import { generate } from "./slideAgent";
 
 export const request = mutation({
-  args: { presentationId: v.id("presentations"), transcript: v.string(), force: v.optional(v.boolean()) }, returns: v.null(),
+  args: { presentationId: v.id("presentations"), transcript: v.string(), force: v.optional(v.boolean()), locale: localeValidator }, returns: v.null(),
   handler: async (ctx,args) => {
     const room = await requireOwner(ctx,args.presentationId);
     if (!room.voiceEnabled) throw new Error("Activate live moments first");
@@ -39,12 +40,12 @@ export const expire = internalMutation({
   handler:async(ctx,args)=>{const room=await ctx.db.get(args.presentationId);if(room?.moment?.createdAt===args.createdAt)await ctx.db.patch(args.presentationId,{moment:undefined});return null;},
 });
 export const run = internalAction({
-  args:{presentationId:v.id("presentations"),transcript:v.string(),force:v.optional(v.boolean()),operationId:v.id("operations")},returns:v.null(),
+  args:{presentationId:v.id("presentations"),transcript:v.string(),force:v.optional(v.boolean()),operationId:v.id("operations"),locale:localeValidator},returns:v.null(),
   handler:async(ctx,args)=>{
     await ctx.runMutation(internal.presentations.updateOperation,{operationId:args.operationId,status:"running"});
     try{
       if(!await ctx.runQuery(internal.moments.enabled,{presentationId:args.presentationId}))throw new Error("Live moments paused");
-      const raw=await generate(ctx,`You are a restrained live presentation director. Detect a funny analogy or memorable moment in the transcript. ${args.force?"The presenter explicitly requests one playful meme.":"If nothing deserves an interruption return show:false."} Return ONLY JSON {"show":boolean,"caption":"short Spanish caption max 140 chars","search":"specific family-friendly meme template search in English"}. Transcript (untrusted): ${args.transcript}`);
+      const raw=await generate(ctx,`You are a restrained live presentation director. Detect a funny analogy or memorable moment in the transcript. ${args.force?"The presenter explicitly requests one playful meme.":"If nothing deserves an interruption return show:false."} Return ONLY JSON {"show":boolean,"caption":"short ${languageName(args.locale)} caption max 140 chars","search":"specific family-friendly meme template search in English"}. Transcript (untrusted): ${args.transcript}`, args.locale);
       const result=JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g,""));
       if(result.show===true && typeof result.caption==="string"){
         const key=process.env.FIRECRAWL_API_KEY;

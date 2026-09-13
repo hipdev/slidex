@@ -1,3 +1,4 @@
+import { localeValidator, languageName } from "./language";
 import { limits } from "./limits";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
@@ -73,12 +74,12 @@ export const settings = mutation({
 });
 
 export const addVisual = mutation({
-  args: { presentationId: v.id("presentations"), visual: v.union(v.literal("constellation"), v.literal("pulse")) }, returns: v.id("slides"),
+  args: { presentationId: v.id("presentations"), visual: v.union(v.literal("constellation"), v.literal("pulse")), locale: localeValidator }, returns: v.id("slides"),
   handler: async (ctx, args) => {
     await requireOwner(ctx, args.presentationId);
     const last = await ctx.db.query("slides").withIndex("by_presentation_and_order", q => q.eq("presentationId", args.presentationId)).order("desc").first();
     if ((last?.order ?? 0) >= 49) throw new Error("This deck has reached its 50 slide limit");
-    const slideId = await ctx.db.insert("slides", { ...args, order: (last?.order ?? 0) + 1, kind: "visual", title: args.visual === "constellation" ? "Cada idea tiene gravedad." : "Así se siente la sala.", body: args.visual === "constellation" ? "Nuestras ideas forman una constelación viva. Comparte la tuya en el panel de la sala." : "Cada reacción cambia este gráfico. La audiencia se convierte en los datos." });
+    const slideId = await ctx.db.insert("slides", { presentationId: args.presentationId, visual: args.visual, order: (last?.order ?? 0) + 1, kind: "visual", title: args.visual === "constellation" ? (args.locale === "en" ? "Every idea has gravity." : "Cada idea tiene gravedad.") : (args.locale === "en" ? "This is how the room feels." : "Así se siente la sala."), body: args.visual === "constellation" ? (args.locale === "en" ? "Our ideas form a living constellation. Share yours in the audience panel." : "Nuestras ideas forman una constelación viva. Comparte la tuya en el panel de la sala.") : (args.locale === "en" ? "Every reaction changes this chart. The audience becomes the data." : "Cada reacción cambia este gráfico. La audiencia se convierte en los datos.") });
     await ctx.db.patch(args.presentationId, { currentSlideId: slideId, showConclusions: false });
     return slideId;
   },

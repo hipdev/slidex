@@ -7,7 +7,8 @@
     "build": "node scripts/build.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "convex": "convex"
+    "convex": "convex",
+    "test": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.95",
@@ -15,9 +16,11 @@
     "convex": "^1.31.0",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
+    "i18next": "^26.4.2",
     "next": "^16.1.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-i18next": "^17.0.13",
     "three": "^0.186.0",
     "zod": "^4.0.0"
   },

@@ -1,3 +1,4 @@
+import { localeValidator, languageName } from "./language";
 import { limits } from "./limits";
 import { v } from "convex/values";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
@@ -8,29 +9,29 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 const emoji = v.union(v.literal("fire"), v.literal("mind"), v.literal("heart"), v.literal("question"));
 
 export const createDemo = mutation({
-  args: { ownerName: v.string() },
+  args: { ownerName: v.string(), locale: localeValidator },
   returns: v.object({ presentationId: v.id("presentations"), slug: v.string() }),
-  handler: async (ctx, { ownerName }) => {
+  handler: async (ctx, { ownerName, locale }) => {
     const ownerId = await getAuthUserId(ctx);
     if (!ownerId) throw new Error("Sign in before creating a presentation");
     await limits.limit(ctx,"rooms",{key:ownerId,throws:true});
     const createdAt = Date.now();
     const slug = `LIVE-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const presentationId = await ctx.db.insert("presentations", {
-      title: "Una presentación que escucha.", slug, ownerName, ownerId, status: "live", createdAt,
+      title: (locale === "en" ? "A presentation that listens." : "Una presentación que escucha."), slug, ownerName, ownerId, status: "live", createdAt,
     });
     const titleId = await ctx.db.insert("slides", {
-      presentationId, order: 0, kind: "title", title: "La próxima gran idea está en esta sala.",
-      body: "Propón una mejora, comparte lo que descubres y construyamos juntos el último slide.",
+      presentationId, order: 0, kind: "title", title: (locale === "en" ? "The next big idea is in this room." : "La próxima gran idea está en esta sala."),
+      body: (locale === "en" ? "Suggest an improvement, share what you discover, and let\u2019s build the last slide together." : "Propón una mejora, comparte lo que descubres y construyamos juntos el último slide."),
     });
     await ctx.db.insert("slides", {
-      presentationId, order: 1, kind: "poll", title: "¿Hacia dónde vamos ahora?",
-      body: "Vota por el próximo capítulo. El rumbo se decide aquí.",
-      choices: [{ id: "agents", label: "Slides que responden" }, { id: "research", label: "Investigar en vivo" }, { id: "chaos", label: "Momentos inesperados" }],
+      presentationId, order: 1, kind: "poll", title: (locale === "en" ? "Where should we go next?" : "¿Hacia dónde vamos ahora?"),
+      body: (locale === "en" ? "Vote for the next chapter. You help choose the direction." : "Vota por el próximo capítulo. El rumbo se decide aquí."),
+      choices: [{ id: "agents", label: (locale === "en" ? "Slides that respond" : "Slides que responden") }, { id: "research", label: (locale === "en" ? "Live research" : "Investigar en vivo") }, { id: "chaos", label: (locale === "en" ? "Unexpected moments" : "Momentos inesperados") }],
     });
     await ctx.db.insert("slides", {
-      presentationId, order: 2, kind: "content", title: "Una charla. Muchas perspectivas.",
-      body: "Usa el copiloto para investigar, convertir un correo en slide o dirigir la charla con tu voz. La audiencia escribe el cierre contigo.",
+      presentationId, order: 2, kind: "content", title: (locale === "en" ? "One talk. Many perspectives." : "Una charla. Muchas perspectivas."),
+      body: (locale === "en" ? "Use the assistant to research, turn emails into slides or direct the talk with your voice. The audience writes the ending with you." : "Usa el copiloto para investigar, convertir un correo en slide o dirigir la charla con tu voz. La audiencia escribe el cierre contigo."),
     });
     await ctx.db.patch(presentationId, { currentSlideId: titleId });
     return { presentationId, slug };

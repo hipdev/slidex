@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { LanguageProvider } from "../i18n/provider";
 
 export const metadata: Metadata = {
   title: "Slidex — presentations that are alive",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="es"><body>{children}</body></html>;
+  return <html lang="es"><body><LanguageProvider>{children}</LanguageProvider></body></html>;
 }
