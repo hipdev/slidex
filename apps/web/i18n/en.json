@@ -251,5 +251,17 @@
   "error.config": "This integration hasn’t been configured yet.",
   "participantCount_one": "{{count}} participant",
   "participantCount_other": "{{count}} participants",
-  "Revisar giro ↗": "Review twist ↗"
+  "Revisar giro ↗": "Review twist ↗",
+  "La charla también es tuya.": "This talk is yours, too.",
+  "Pide una pausa o abre una nueva perspectiva.": "Ask for a pause or open a new perspective.",
+  "Señal enviada": "Signal sent",
+  "Pedir un ejemplo": "Ask for an example",
+  "Cerrar propuesta": "Close suggestion",
+  "Proponer un giro": "Suggest a twist",
+  "Tu señal de pausa es anónima.": "Your pause request is anonymous.",
+  "En este slide": "On this slide",
+  "Cargando la sala…": "Loading the room…",
+  "Una buena pregunta lo cambia todo.": "A good question changes everything.",
+  "Las pausas y los giros de la sala aparecerán aquí. Puedes apoyar los que te interesen.": "Pause requests and twists will appear here. Support the ones that speak to you.",
+  "Un ejemplo nos ayudaría a seguir.": "An example would help us follow along."
 }

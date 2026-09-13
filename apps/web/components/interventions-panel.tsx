@@ -26,19 +26,22 @@ export function InterventionsPanel({ presentationId, slideId, isHost, report }: 
   };
   return <section className="interventions-panel" aria-label={tr("Giros en vivo")}>
     <div className="panel-title"><span className="eyebrow">{tr("CAMBIA EL RUMBO")}</span><span className="intervention-tag">{tr("EN VIVO")}</span></div>
+    <header className="twists-intro"><h2>{tr("La charla también es tuya.")}</h2><p>{tr("Pide una pausa o abre una nueva perspectiva.")}</p></header>
     <div className="intervention-triggers">
-      <button disabled={busy || !rows} aria-pressed={!!lost?.supported} onClick={() => void run(() => lost ? support({ id: lost._id }) : propose({ presentationId, slideId, kind: "lost" }))}><span>↶</span><b>{lost?.supported ? tr("Pediste una pausa") : tr("Me perdí")}</b><small>{lost ? tr("clarityCount", { count: lost.votes }) : tr("Otra forma de entenderlo")}</small></button>
-      <button aria-expanded={open} onClick={() => setOpen(!open)}><span>↯</span><b>{tr("Plot twist")}</b><small>{tr("¿Y si fuera al revés?")}</small></button>
+      <button disabled={busy || !rows} aria-pressed={!!lost?.supported} onClick={() => void run(() => lost ? support({ id: lost._id }) : propose({ presentationId, slideId, kind: "lost" }))}><span className="twist-action-icon" aria-hidden="true"><TwistIcon kind="lost" /></span><b>{lost?.supported ? tr("Pediste una pausa") : tr("Me perdí")}</b><small>{lost ? tr("clarityCount", { count: lost.votes }) : tr("Otra forma de entenderlo")}</small><span className="twist-action-footer">{tr(lost?.supported ? "Señal enviada" : "Pedir un ejemplo")} <span aria-hidden="true">{lost?.supported ? "✓" : "+"}</span></span></button>
+      <button aria-expanded={open} onClick={() => setOpen(!open)}><span className="twist-action-icon" aria-hidden="true"><TwistIcon kind="twist" /></span><b>{tr("Plot twist")}</b><small>{tr("¿Y si fuera al revés?")}</small><span className="twist-action-footer">{tr(open ? "Cerrar propuesta" : "Proponer un giro")} <span aria-hidden="true">{open ? "−" : "↗"}</span></span></button>
     </div>
-    <p className="panel-hint">{tr("Tu señal de «Me perdí» no muestra tu nombre. Propón un giro, apoya uno y deja que la charla evolucione.")}</p>
-    {open && <form onSubmit={e => { e.preventDefault(); void run(async () => { await propose({ presentationId, slideId, kind: "twist", text }); setText(""); setOpen(false); report(tr("Plot twist compartido. La sala ya puede apoyarlo.")); }); }}>
+    <p className="twists-privacy"><svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="5" y="9" width="10" height="8" rx="2"/><path d="M7 9V6a3 3 0 0 1 6 0v3"/></svg>{tr("Tu señal de pausa es anónima.")}</p>
+    {open && <form className="twist-composer" onSubmit={e => { e.preventDefault(); void run(async () => { await propose({ presentationId, slideId, kind: "twist", text }); setText(""); setOpen(false); report(tr("Plot twist compartido. La sala ya puede apoyarlo.")); }); }}>
       <label htmlFor="twist-text">{tr("Cuestiona una idea de este slide")}</label>
       <textarea id="twist-text" required maxLength={300} rows={3} value={text} onChange={e => setText(e.target.value)} placeholder={tr("¿Y si colaborar también nos hiciera pensar igual?")} />
       <button className="primary" disabled={busy || !text.trim()}>{tr("Proponer giro ↗")}</button>
     </form>}
-    <div className="intervention-list">{visible.map(row => <article className={`intervention-card ${row.kind}`} key={row._id}>
-      <div className="contribution-meta"><b>{row.kind === "lost" ? tr("↶ Me perdí") : tr("↯ Plot twist")}</b><span>{tr(statusLabels[row.status])}</span></div>
-      <p>{row.kind === "lost" ? tr("Me perdí. ¿Lo explicamos con un ejemplo?") : row.text}</p>
+    <div className="twists-feed-heading"><h3>{tr("En este slide")}</h3><span>{visible.length}</span></div>
+    {!rows ? <p className="panel-hint" role="status">{tr("Cargando la sala…")}</p> : visible.length === 0 && <div className="twists-empty"><span aria-hidden="true">✧</span><b>{tr("Una buena pregunta lo cambia todo.")}</b><p>{tr("Las pausas y los giros de la sala aparecerán aquí. Puedes apoyar los que te interesen.")}</p></div>}
+    <div className="intervention-list">{visible.map(row => <article className={`intervention-card ${row.kind}`} data-status={row.status} key={row._id}>
+      <div className="contribution-meta"><b>{row.kind === "lost" ? tr("↶ Me perdí") : tr("↯ Plot twist")}</b><span className="twist-status">{tr(statusLabels[row.status])}</span></div>
+      <p className="twist-request">{row.kind === "lost" ? tr("Un ejemplo nos ayudaría a seguir.") : row.text}</p>
       {row.kind === "lost" && row.votes >= 3 && row.status === "pending" && <p className="intervention-alert">{tr("La sala necesita una pausa. Un ejemplo puede ayudar.")}</p>}
       <div className="contribution-actions"><button disabled={busy || ["published", "dismissed"].includes(row.status)} aria-pressed={row.supported} aria-label={tr("Apoyar aporte", { text: row.kind === "lost" ? tr("Me perdí") : row.text })} onClick={() => void run(() => support({ id: row._id }))}>↑ {row.votes}{row.supported ? tr(" · Te sumaste") : tr(" · Me sumo")}</button>
         {isHost && ["pending", "failed"].includes(row.status) && <button disabled={busy || row.votes === 0} onClick={() => void run(() => prepare({ id: row._id, locale }))}>{row.status === "failed" ? tr("Reintentar") : row.kind === "lost" ? tr("Explicar más fácil") : tr("Investigar giro")}</button>}
@@ -58,4 +61,8 @@ export function InterventionCue({ slideId, onReview }: { slideId: Id<"slides">; 
   const twists = rows?.filter(r => r.kind === "twist" && !["published", "dismissed"].includes(r.status)).length ?? 0;
   if (!lost && !twists) return null;
   return <a className="intervention-cue" href="#live-interventions" onClick={onReview} aria-live="polite">{lost ? tr("cueClarity", { count: lost.votes }) : ""}{lost && twists ? " · " : ""}{twists ? tr("cueTwists", { count: twists }) : ""} <span>{tr("Revisar ↓")}</span></a>;
+}
+
+function TwistIcon({ kind }: { kind: "lost" | "twist" }) {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">{kind === "lost" ? <><path d="M8 4 4 8l4 4M4 8h10a6 6 0 0 1 0 12h-3"/><path d="M14 12v4m4-4v4"/></> : <><path d="m14 3-9 11h7l-2 7 9-12h-7l2-6Z"/></>}</svg>;
 }

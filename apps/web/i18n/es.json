@@ -251,5 +251,17 @@
   "error.config": "Esta integración aún no está configurada.",
   "participantCount_one": "{{count}} participante",
   "participantCount_other": "{{count}} participantes",
-  "Revisar giro ↗": "Revisar giro ↗"
+  "Revisar giro ↗": "Revisar giro ↗",
+  "La charla también es tuya.": "La charla también es tuya.",
+  "Pide una pausa o abre una nueva perspectiva.": "Pide una pausa o abre una nueva perspectiva.",
+  "Señal enviada": "Señal enviada",
+  "Pedir un ejemplo": "Pedir un ejemplo",
+  "Cerrar propuesta": "Cerrar propuesta",
+  "Proponer un giro": "Proponer un giro",
+  "Tu señal de pausa es anónima.": "Tu señal de pausa es anónima.",
+  "En este slide": "En este slide",
+  "Cargando la sala…": "Cargando la sala…",
+  "Una buena pregunta lo cambia todo.": "Una buena pregunta lo cambia todo.",
+  "Las pausas y los giros de la sala aparecerán aquí. Puedes apoyar los que te interesen.": "Las pausas y los giros de la sala aparecerán aquí. Puedes apoyar los que te interesen.",
+  "Un ejemplo nos ayudaría a seguir.": "Un ejemplo nos ayudaría a seguir."
 }
