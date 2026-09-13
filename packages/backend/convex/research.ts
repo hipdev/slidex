@@ -54,7 +54,7 @@ export async function scrape(url: string | undefined, prompt: string) {
     ? (scrapedPage ? [scrapedPage] : [])
     : (payload as FirecrawlSearchPayload).data?.web ?? [];
   if (!pages.length) throw new Error("No readable sources found. Try another topic or URL.");
-  return { markdown: pages.map((page) => page.markdown ?? "").join("\n\n"), urls: pages.flatMap((page) => page.url ? [page.url] : url ? [url] : []) };
+  return { markdown: pages.map((page) => page.markdown ? `Source: ${page.url ?? url ?? "unknown"}\n${page.markdown}` : "").join("\n\n"), urls: pages.flatMap((page) => page.url ? [page.url] : url ? [url] : []) };
 }
 
 type FirecrawlPage = { markdown?: string; url?: string };

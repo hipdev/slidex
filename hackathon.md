@@ -71,3 +71,13 @@ Rules checked against https://luma.com/convex-allgas-hackathon on September 12, 
 Rebalanced the landing page using viewport-height-aware spacing and display sizes. Switched the main heading to Playfair Display with gentler tracking and readable leading. Consolidated conflicting landing overrides; the live-room layout is unchanged.
 
 Browser measurements confirm no vertical or horizontal overflow at 1536×980, 1366×768, 1280×720 and 1024×600. Mobile at 390×844 retains natural vertical scrolling without horizontal overflow. Next.js production build passed.
+
+### Rojo Slidex + giros de la audiencia (13 septiembre)
+
+- Marca roja cálida propia: portada, botones, acentos y estudio con crema/carbón. La portada conserva su ajuste de altura desktop.
+- **Me perdí**: señal por slide sin nombres; un voto por identidad anónima, reversible. A partir de tres apoyos aparece una sugerencia de pausa. El host prepara una analogía con OpenAI o marca «Ya lo expliqué».
+- **Plot twist**: la audiencia escribe un desafío (300 caracteres) y apoya otros. El host investiga con Firecrawl y OpenAI; la búsqueda se formula a partir del desafío y el slide. El resultado es un borrador privado con fuentes, nunca una publicación automática.
+- **Mostrar como slide** agrega la respuesta al deck y la presenta en todas las sesiones. Publicación idempotente; el slide original se conserva. Descartar durante la generación impide que reaparezca el resultado tardío.
+- Controles en «Cambia el rumbo», visibles también al usar el copiloto. Aviso al host desde el escenario con enlace para revisar. Comandos «explica más fácil» y «plot twist [desafío]», por reconocimiento de voz o campo de texto.
+- Límite de 50 intervenciones por slide; consultas indexadas y acotadas. Generación exclusiva del host con el rate limiter de AI existente. Las identidades de los apoyos no se devuelven al cliente.
+- Verificación: 7 tests, typecheck, build estática y push Convex. Prueba real con host/audiencia separados en navegador: petición de pausa, analogía OpenAI, desafío, Firecrawl, revisión y publicación sincronizada. Mobile 390px sin overflow horizontal. Audio físico no probado; los comandos de texto ejecutan el mismo flujo.

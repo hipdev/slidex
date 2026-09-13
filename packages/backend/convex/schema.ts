@@ -47,6 +47,18 @@ export default defineSchema({
     status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
     votes: v.number(),
   }).index("by_presentationId", ["presentationId"]),
+  interventions: defineTable({
+    presentationId: v.id("presentations"), slideId: v.id("slides"),
+    kind: v.union(v.literal("lost"), v.literal("twist")),
+    text: v.string(), votes: v.number(),
+    status: v.union(v.literal("pending"), v.literal("running"), v.literal("ready"), v.literal("published"), v.literal("dismissed"), v.literal("failed")),
+    title: v.optional(v.string()), body: v.optional(v.string()),
+    sourceUrls: v.optional(v.array(v.string())), error: v.optional(v.string()),
+    publishedSlideId: v.optional(v.id("slides")),
+  }).index("by_slideId", ["slideId"]),
+  interventionVotes: defineTable({
+    interventionId: v.id("interventions"), userId: v.id("users"),
+  }).index("by_interventionId_and_userId", ["interventionId", "userId"]),
   endorsements: defineTable({
     contributionId: v.id("contributions"),
     userId: v.id("users"),

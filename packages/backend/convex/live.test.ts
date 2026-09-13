@@ -71,3 +71,43 @@ test("AgentMail signatures, inbox routing and delivery deduplication",async()=>{
     expect((await t.fetch("/agentmail",{method:"POST",headers:{...headers,"svix-signature":new Webhook(secret).sign("msg-delivery",date,broken)},body:broken})).status).toBe(400);
   } finally {vi.unstubAllEnvs();}
 });
+
+test("clarity requests deduplicate people, keep identities private and remain slide scoped", async () => {
+  const { host, guest, room, data } = await fixture();
+  const args = { presentationId: room.presentationId, slideId: data.slides[0]._id, kind: "lost" as const };
+  const id = await guest.mutation(api.interventions.propose, args);
+  expect(await guest.mutation(api.interventions.propose, args)).toBe(id);
+  await host.mutation(api.interventions.propose, args);
+  const rows = await host.query(api.interventions.list, { slideId: args.slideId });
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({ votes: 2, supported: true });
+  expect(rows[0]).not.toHaveProperty("userId");
+  expect(await guest.query(api.interventions.list, { slideId: data.slides[1]._id })).toEqual([]);
+  await guest.mutation(api.interventions.support, { id });
+  expect((await guest.query(api.interventions.list, { slideId: args.slideId }))[0]).toMatchObject({ votes: 1, supported: false });
+  await expect(guest.mutation(api.interventions.prepare, { id })).rejects.toThrow("Only the presentation host");
+  await expect(guest.mutation(api.interventions.resolve, { id, publish: false })).rejects.toThrow("Only the presentation host");
+  await expect(guest.mutation(api.interventions.propose, { ...args, slideId: data.slides[1]._id })).rejects.toThrow("El slide cambió");
+});
+
+test("AI drafts stay private, dismiss cancels late results and publishing is atomic and idempotent", async () => {
+  const { t, host, guest, room, data } = await fixture();
+  const { internal } = await import("./_generated/api");
+  const id = await guest.mutation(api.interventions.propose, { presentationId: room.presentationId, slideId: data.slides[0]._id, kind: "twist", text: "¿Y si la colaboración también produce sesgos?" });
+  await expect(host.mutation(api.interventions.resolve, { id, publish: true })).rejects.toThrow("Espera");
+  await t.run(ctx => ctx.db.patch(id, { status: "running" }));
+  await t.mutation(internal.interventions.finish, { id, title: "Un contrapunto", body: "Una explicación revisable.", sourceUrls: ["https://example.com/evidence"] });
+  expect((await guest.query(api.interventions.list, { slideId: data.slides[0]._id }))[0].body).toBeUndefined();
+  expect((await host.query(api.interventions.list, { slideId: data.slides[0]._id }))[0].body).toBe("Una explicación revisable.");
+  await host.mutation(api.interventions.resolve, { id, publish: true });
+  await host.mutation(api.interventions.resolve, { id, publish: true });
+  const updated = (await host.query(api.presentations.getBySlug, { slug: room.slug }))!;
+  expect(updated.slides).toHaveLength(4);
+  expect(updated.presentation.currentSlideId).toBe(updated.slides[3]._id);
+  expect(updated.slides[0].body).toBe(data.slides[0].body);
+  const lostId = await guest.mutation(api.interventions.propose, { presentationId: room.presentationId, slideId: updated.slides[3]._id, kind: "lost" });
+  await t.run(ctx => ctx.db.patch(lostId, { status: "running" }));
+  await host.mutation(api.interventions.resolve, { id: lostId, publish: false });
+  await t.mutation(internal.interventions.finish, { id: lostId, title: "Late", body: "Must not reappear" });
+  expect((await host.query(api.interventions.list, { slideId: updated.slides[3]._id }))[0].status).toBe("dismissed");
+});

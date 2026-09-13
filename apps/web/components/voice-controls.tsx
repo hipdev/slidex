@@ -21,6 +21,8 @@ export function VoiceControls({ room, slides, report }: { room: Doc<"presentatio
   const navigate=useMutation(api.presentations.setCurrentSlide);
   const research=useMutation(api.research.request);
   const visual=useMutation(api.live.addVisual);
+  const propose=useMutation(api.interventions.propose);
+  const prepare=useMutation(api.interventions.prepare);
   const props=useRef({room,slides}); props.current={room,slides};
   useEffect(()=>{setSupported(!!((window as SpeechWindow).SpeechRecognition || (window as SpeechWindow).webkitSpeechRecognition));return()=>{ if(startTimer.current)clearTimeout(startTimer.current); recognition.current?.abort(); };},[]);
   const execute=async(text:string, manual=false)=>{
@@ -35,6 +37,11 @@ export function VoiceControls({ room, slides, report }: { room: Doc<"presentatio
     else if(/^(volver|volver al slide)$/.test(words))await settings({presentationId:room._id,showConclusions:false});
     else if(/^(crear |muestra |mostrar )?(una )?constelacion$/.test(words))await visual({presentationId:room._id,visual:"constellation"});
     else if(words==="pulso" || words==="mostrar pulso")await visual({presentationId:room._id,visual:"pulse"});
+    else if(words === "explica mas facil" || words.startsWith("plot twist ")) {
+      if (!room.currentSlideId) return;
+      const id = await propose({presentationId:room._id,slideId:room.currentSlideId,kind:words === "explica mas facil" ? "lost" : "twist",text:words.startsWith("plot twist ") ? text.replace(/^(slidex[,\s]*)?plot twist\s+/i, "").slice(0,300) : undefined});
+      await prepare({id}); report("Preparando borrador. Revísalo en Cambia el rumbo antes de mostrarlo.");
+    }
     else if(/^(investiga|crea un slide sobre)\s+/.test(words))await research({presentationId:room._id,prompt:text.replace(/^(slidex[,\s]*)?(investiga|crea un slide sobre)\s+/i,"")});
     else if(room.voiceEnabled && (words.startsWith("meme ") || Date.now()-lastMoment.current>15000)){
       lastMoment.current=Date.now(); await moments({presentationId:room._id,transcript:text.slice(0,1200),force:words.startsWith("meme ")});
@@ -52,7 +59,7 @@ export function VoiceControls({ room, slides, report }: { room: Doc<"presentatio
     mic.onend=()=>{if(startTimer.current)clearTimeout(startTimer.current);setStarting(false);setListening(false);};recognition.current=mic;
     try{setStarting(true);mic.start();startTimer.current=setTimeout(()=>{setStarting(false);setListening(false);mic.abort();report("El navegador no inició la escucha. Revisa el permiso del micrófono o usa los comandos por texto.");},10000);}catch(error){setStarting(false);report(String(error));}
   };
-  return <section className="voice-controls"><div className="voice-heading"><span>Tu voz, al mando</span><button aria-pressed={listening || starting} disabled={!supported} onClick={toggle}>{starting?"Cancelar inicio…":listening?"■ Detener micrófono":"♩ Activar micrófono"}</button></div><p>{supported?"Escucha solo al activarlo. El navegador procesa la voz; las frases de momentos se envían a OpenAI y Firecrawl.":"Este navegador no ofrece reconocimiento de voz. Usa los mismos comandos por texto o abre Chrome."}</p><label className="moment-toggle"><input type="checkbox" checked={!!room.voiceEnabled} disabled={savingMode} onChange={async e=>{setSavingMode(true);try{await settings({presentationId:room._id,voiceEnabled:e.target.checked,clearMoment:!e.target.checked});}catch(error){report(String(error));}finally{setSavingMode(false);}}} /> Momentos en vivo · memes contextuales</label>{transcript && <blockquote aria-live="polite">“{transcript}”</blockquote>}<form onSubmit={async e=>{e.preventDefault();setBusy(true);try{await execute(command,true);setTranscript(command);setCommand("");}catch(error){report(String(error));}finally{setBusy(false);}}}><label htmlFor="voice-command">Comando o frase de prueba</label><div className="command-row"><input id="voice-command" value={command} maxLength={1000} onChange={e=>setCommand(e.target.value)} placeholder="siguiente · investiga… · meme…"/><button disabled={busy || savingMode || !command.trim()}>Ejecutar</button></div></form><small>Di «siguiente», «anterior», «cierre», «constelación» o «investiga…».</small></section>;
+  return <section className="voice-controls"><div className="voice-heading"><span>Tu voz, al mando</span><button aria-pressed={listening || starting} disabled={!supported} onClick={toggle}>{starting?"Cancelar inicio…":listening?"■ Detener micrófono":"♩ Activar micrófono"}</button></div><p>{supported?"Escucha solo al activarlo. El navegador procesa la voz; las frases de momentos se envían a OpenAI y Firecrawl.":"Este navegador no ofrece reconocimiento de voz. Usa los mismos comandos por texto o abre Chrome."}</p><label className="moment-toggle"><input type="checkbox" checked={!!room.voiceEnabled} disabled={savingMode} onChange={async e=>{setSavingMode(true);try{await settings({presentationId:room._id,voiceEnabled:e.target.checked,clearMoment:!e.target.checked});}catch(error){report(String(error));}finally{setSavingMode(false);}}} /> Momentos en vivo · memes contextuales</label>{transcript && <blockquote aria-live="polite">“{transcript}”</blockquote>}<form onSubmit={async e=>{e.preventDefault();setBusy(true);try{await execute(command,true);setTranscript(command);setCommand("");}catch(error){report(String(error));}finally{setBusy(false);}}}><label htmlFor="voice-command">Comando o frase de prueba</label><div className="command-row"><input id="voice-command" value={command} maxLength={1000} onChange={e=>setCommand(e.target.value)} placeholder="siguiente · investiga… · meme…"/><button disabled={busy || savingMode || !command.trim()}>Ejecutar</button></div></form><small>Di «siguiente», «anterior», «cierre», «constelación» «explica más fácil», «plot twist…» o «investiga…».</small></section>;
 }
 type SpeechWindow=Window & {SpeechRecognition?:new()=>Recognition;webkitSpeechRecognition?:new()=>Recognition};
 
