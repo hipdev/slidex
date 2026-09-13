@@ -65,3 +65,9 @@ Validation:
 No social posts, emails or final submissions were sent by the coding agent.
 
 Rules checked against https://luma.com/convex-allgas-hackathon on September 12, 2026.
+
+## September 13, 2026 — Desktop landing fit
+
+Rebalanced the landing page using viewport-height-aware spacing and display sizes. Switched the main heading to Playfair Display with gentler tracking and readable leading. Consolidated conflicting landing overrides; the live-room layout is unchanged.
+
+Browser measurements confirm no vertical or horizontal overflow at 1536×980, 1366×768, 1280×720 and 1024×600. Mobile at 390×844 retains natural vertical scrolling without horizontal overflow. Next.js production build passed.
