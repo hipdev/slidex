@@ -434,3 +434,14 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .add-slide small { font-size:10px; font-weight:400; }
 .navigator .add-slide:hover:not(:disabled) { background:#fbe0d6; border-color:var(--brand); }
 @media(max-width:680px) { .navigator .add-slide { flex:0 0 145px; width:145px; margin-top:0; } }
+
+.app-shell.presentation-mode { height:100dvh; min-height:0; display:flex; flex-direction:column; overflow:hidden; background:#241a18; }
+.presentation-mode .topbar, .presentation-mode .host-toolbar { display:none; }
+.presentation-mode .deck-grid { display:flex; flex:1; min-height:0; overflow:auto; padding:0 0 72px; }
+.presentation-mode .stage { flex:1; align-self:stretch; width:100%; max-width:none; margin:0; border-radius:0; min-height:100%; overflow-y:auto; box-shadow:none; }
+.presentation-controls { position:fixed; z-index:30; bottom:12px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:6px; width:max-content; max-width:calc(100% - 16px); padding:4px 8px; border:1px solid #57413a; border-radius:14px; color:#fff9f2; background:#241a18; }
+.presentation-controls button { min-width:44px; min-height:44px; border:0; border-radius:8px; padding:8px 12px; background:transparent; color:inherit; font-size:12px; }
+.presentation-controls button:hover:not(:disabled) { background:#57413a; }
+.presentation-controls button:disabled { color:#aa9388; }
+.presentation-controls > span { white-space:nowrap; font-size:12px; font-variant-numeric:tabular-nums; }
+@media(max-width:680px) { .presentation-controls { gap:2px; } .presentation-controls button { padding:6px; font-size:10px; } }

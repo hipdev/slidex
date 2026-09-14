@@ -267,5 +267,9 @@
   "Guardar cuenta": "Save account",
   "Mi cuenta": "My account",
   "Tu siguiente idea": "Your next idea",
-  "Máximo de 50 slides": "50-slide limit reached"
+  "Máximo de 50 slides": "50-slide limit reached",
+  "Controles de presentación": "Presentation controls",
+  "Pantalla completa": "Fullscreen",
+  "Salir de pantalla completa": "Exit fullscreen",
+  "Mostrar QR": "Show QR"
 }

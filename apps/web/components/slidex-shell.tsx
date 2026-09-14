@@ -13,6 +13,7 @@ const LiveVisual = dynamic(() => import("./live-visual"), { ssr: false, loading:
 import { LanguagePicker } from "../i18n/provider";
 import { AiCompanion, QuickGuide } from "./ai-companion";
 import { SlideEditor } from "./slide-editor";
+import { PresentationControls } from "./presentation-controls";
 import { SlideNavigator } from "./slide-navigator";
 import { VoiceControls, MomentCard } from "./voice-controls";
 import { InterventionsPanel, InterventionCue } from "./interventions-panel";
@@ -105,6 +106,14 @@ function Slidex() {
   const totalVotes = Object.values(votes).reduce((sum, item) => sum + item, 0);
   const isPoll = current?.kind === "poll";
 
+  const exitPresentation = () => {
+    setPresenting(false);
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+  };
+  const navigateSlide = (offset: number) => {
+    const slide = data.slides[data.slides.findIndex(s => s._id === current?._id) + offset];
+    if (slide) void setCurrentSlide({ presentationId: data.presentation._id, slideId: slide._id }).catch(error => setNotice(friendlyError(error)));
+  };
   const editCurrentSlide = (fresh = false) => {
     setEditorRequest(value => ({ fresh, version: value.version + 1 }));
     setPresenting(false); setPanel("agent");
@@ -122,10 +131,11 @@ function Slidex() {
       </div>
     </header>
     {accountOpen && <AccountDialog account={account} history={history} signUp={signUp} signIn={signIn} signUpPending={signUpPending} signInPending={signInPending} onClose={() => setAccountOpen(false)} onSignOut={() => void signOut()} />}
-    {data.isHost && current && <InterventionCue slideId={current._id} onReview={() => { setPresenting(false); setPanel("twists"); }} />}
+    {data.isHost && !presenting && current && <InterventionCue slideId={current._id} onReview={() => { setPresenting(false); setPanel("twists"); }} />}
     {copyNotice && <div className="copy-toast" role="status"><span>✓ {tr("Enlace copiado; compártelo para invitar a la sala")}</span><button aria-label={tr("Cerrar aviso")} onClick={() => setCopyNotice(false)}>×</button></div>}
     {notice && <div className="notice" role="status">{notice}<button aria-label={tr("Cerrar aviso")} onClick={() => setNotice("")}>×</button></div>}
     {data.isHost && <div className="host-toolbar"><span>{tr("Estudio en vivo")} <b> / {data.presentation.title}</b></span><button onClick={() => editCurrentSlide()}>✎ Edit slide</button><button disabled={data.slides[0]?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index > 0) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index-1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("← Anterior")}</button><button disabled={data.slides.at(-1)?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index < data.slides.length-1) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index+1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("Siguiente →")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "constellation", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("✧ Constelación 3D")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "pulse", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("▥ Pulso de la sala")}</button></div>}
+    {presenting && <PresentationControls onExit={exitPresentation} onPrevious={data.isHost ? () => navigateSlide(-1) : undefined} onNext={data.isHost ? () => navigateSlide(1) : undefined} hasPrevious={current?._id !== data.slides[0]?._id} hasNext={current?._id !== data.slides.at(-1)?._id} position={`${data.slides.findIndex(s => s._id === current?._id) + 1} / ${data.slides.length}`} />}
     <section className="deck-grid">
       <SlideNavigator
         slides={data.slides}
