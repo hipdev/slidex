@@ -5,7 +5,7 @@ import { ConvexAuthProvider, useAuthActions, useConvexAuth } from "@convex-dev/a
 import { useAnonymousAuth } from "@convex-dev/auth/providers/anonymous/react";
 import { useSignInWithPassword, useSignUpWithPassword } from "@convex-dev/auth/providers/password/react";
 import { ConvexReactClient, useAction, useMutation, useQuery } from "convex/react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { api } from "@slidex/backend/api";
 
 import dynamic from "next/dynamic";
@@ -39,6 +39,17 @@ function Slidex() {
   const [presenting, setPresenting] = useState(false);
   const [inboxBusy, setInboxBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [copyNotice, setCopyNotice] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+  const copyInvite = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/?room=${slug}`);
+      setCopyNotice(true);
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopyNotice(false), 4000);
+    } catch { setNotice(tr("Copia el enlace desde la barra del navegador")); }
+  };
   const [panel, setPanel] = useState<"room" | "agent" | "twists">("agent");
   const [accountOpen, setAccountOpen] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
@@ -98,9 +109,10 @@ function Slidex() {
     window.setTimeout(() => { const editor = document.getElementById("slide-editor") as HTMLDetailsElement | null; if (editor) { editor.open = true; editor.scrollIntoView({ behavior: "smooth", block: "center" }); } }, 0);
   };
   return <main className={`app-shell ${presenting ? "presentation-mode" : ""}`}>
-    <header className="topbar"><a href="/" className="logo">SLID<span>EX</span></a><div className="room-pill"><i /> {tr("LIVE ·")} {slug}</div><div className="top-actions"><LanguagePicker /><button className="share" onClick={() => setAccountOpen(true)}>{account?.isAnonymous ? "Save account" : "My account"}</button><a className="share" href="#participation" onClick={() => { setPresenting(false); setPanel("room"); }}>{tr("Participar ↓")}</a><button className="share present-action" onClick={() => setPresenting(!presenting)}>{presenting ? tr("Salir del escenario") : tr("Presentar ⤢")}</button><span className="status">{data.isHost ? tr("Presentador") : tr("Audiencia")} · {tr("participantCount", {count:data.participantCount})}</span><button className="share" onClick={() => void navigator.clipboard.writeText(`${window.location.origin}/?room=${slug}`).then(() => setNotice(tr("Enlace copiado; compártelo para invitar a la sala"))).catch(() => setNotice(tr("Copia el enlace desde la barra del navegador")))}>{tr("Invitar a la sala")}</button></div></header>
+    <header className="topbar"><a href="/" className="logo">SLID<span>EX</span></a><div className="room-pill"><i /> {tr("LIVE ·")} {slug}</div><div className="top-actions"><LanguagePicker />{account?.email && <span className="account-email" title={account.email}>{account.email}</span>}<button className="share" onClick={() => setAccountOpen(true)}>{account?.isAnonymous ? "Save account" : "My account"}</button><a className="share" href="#participation" onClick={() => { setPresenting(false); setPanel("room"); }}>{tr("Participar ↓")}</a><button className="share present-action" onClick={() => setPresenting(!presenting)}>{presenting ? tr("Salir del escenario") : tr("Presentar ⤢")}</button><span className="status">{data.isHost ? tr("Presentador") : tr("Audiencia")} · {tr("participantCount", {count:data.participantCount})}</span><button className="share" onClick={() => void copyInvite()}>{tr("Invitar a la sala")}</button></div></header>
     {accountOpen && <AccountDialog account={account} history={history} signUp={signUp} signIn={signIn} signUpPending={signUpPending} signInPending={signInPending} onClose={() => setAccountOpen(false)} onSignOut={() => void signOut()} />}
     {data.isHost && current && <InterventionCue slideId={current._id} onReview={() => { setPresenting(false); setPanel("twists"); }} />}
+    {copyNotice && <div className="copy-toast" role="status"><span>✓ {tr("Enlace copiado; compártelo para invitar a la sala")}</span><button aria-label={tr("Cerrar aviso")} onClick={() => setCopyNotice(false)}>×</button></div>}
     {notice && <div className="notice" role="status">{notice}<button aria-label={tr("Cerrar aviso")} onClick={() => setNotice("")}>×</button></div>}
     {data.isHost && <div className="host-toolbar"><span>{tr("Estudio en vivo")} <b> / {data.presentation.title}</b></span><button onClick={editCurrentSlide}>✎ Edit slide</button><button disabled={data.slides[0]?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index > 0) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index-1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("← Anterior")}</button><button disabled={data.slides.at(-1)?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index < data.slides.length-1) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index+1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("Siguiente →")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "constellation", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("✧ Constelación 3D")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "pulse", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("▥ Pulso de la sala")}</button></div>}
     <section className="deck-grid">

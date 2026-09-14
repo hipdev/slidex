@@ -335,6 +335,8 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .navigator .slide-sort-list .thumb:active { cursor:grabbing; }
 .navigator .slide-sort-list .thumb.is-dragging { opacity:.16; }
 .slide-drag-overlay { width:100%; min-height:94px; box-sizing:border-box; pointer-events:none; cursor:grabbing; transform:rotate(1deg) scale(1.025); box-shadow:0 16px 30px #4d2b1b38; }
+.account-email { max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#e4d6cf; font:600 11px Manrope,sans-serif; }
+@media (max-width:900px) { .account-email { display:none; } }
 .slide-image { position:relative; z-index:2; width:min(42%,440px); margin:0 0 18px auto; border-radius:13px; overflow:hidden; background:#fff8f0; box-shadow:0 10px 24px #4d2b1b24; }
 .slide-image img { display:block; width:100%; max-height:250px; object-fit:cover; }
 .slide-image figcaption { padding:7px 10px; font-size:10px; color:#654535; }
@@ -407,3 +409,6 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .agent-panel .interventions-panel > .panel-hint { margin:18px 0 24px; line-height:1.75; }
 .agent-panel .intervention-card .intervention-review { margin-top:16px; gap:10px; }
 .agent-panel .intervention-card .contribution-actions button { line-height:1.5; padding:10px 12px; }
+
+.copy-toast { position:fixed; z-index:100; bottom:24px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:16px; width:max-content; max-width:calc(100% - 32px); padding:8px 12px 8px 20px; border-radius:12px; background:#36231d; color:#fff9f2; box-shadow:0 8px 32px #241a1830; font-size:14px; }
+.copy-toast button { flex-shrink:0; width:44px; border:0; background:transparent; color:inherit; font-size:22px; }
