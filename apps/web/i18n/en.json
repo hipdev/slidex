@@ -271,5 +271,10 @@
   "Controles de presentación": "Presentation controls",
   "Pantalla completa": "Fullscreen",
   "Salir de pantalla completa": "Exit fullscreen",
-  "Mostrar QR": "Show QR"
+  "Mostrar QR": "Show QR",
+  "Cerrar invitación": "Close invitation",
+  "Únete a la presentación": "Join the presentation",
+  "Escanea el QR con la cámara de tu teléfono y participa en vivo.": "Scan the QR code with your phone camera to participate live.",
+  "Copiar enlace": "Copy link",
+  "Escanea para unirte a la sala": "Scan to join the room"
 }
