@@ -13,6 +13,7 @@ const LiveVisual = dynamic(() => import("./live-visual"), { ssr: false, loading:
 import { LanguagePicker } from "../i18n/provider";
 import { AiCompanion, QuickGuide } from "./ai-companion";
 import { SlideEditor } from "./slide-editor";
+import { SlideNavigator } from "./slide-navigator";
 import { VoiceControls, MomentCard } from "./voice-controls";
 import { InterventionsPanel, InterventionCue } from "./interventions-panel";
 import { RoomPanel, ClosingWall } from "./room-panel";
@@ -39,7 +40,6 @@ function Slidex() {
   const [inboxBusy, setInboxBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [panel, setPanel] = useState<"room" | "agent" | "twists">("agent");
-  const [draggedSlideId, setDraggedSlideId] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
   const [researchPrompt, setResearchPrompt] = useState("");
@@ -97,15 +97,6 @@ function Slidex() {
     setPresenting(false); setPanel("agent");
     window.setTimeout(() => { const editor = document.getElementById("slide-editor") as HTMLDetailsElement | null; if (editor) { editor.open = true; editor.scrollIntoView({ behavior: "smooth", block: "center" }); } }, 0);
   };
-  const moveSlide = async (targetId: string) => {
-    if (!draggedSlideId || draggedSlideId === targetId) return;
-    const reordered = [...data.slides]; const from = reordered.findIndex((slide) => slide._id === draggedSlideId); const to = reordered.findIndex((slide) => slide._id === targetId);
-    if (from < 0 || to < 0) return;
-    const [moving] = reordered.splice(from, 1); reordered.splice(to, 0, moving);
-    setDraggedSlideId(null);
-    try { await reorderSlides({ presentationId: data.presentation._id, slideIds: reordered.map((slide) => slide._id) }); } catch (error) { setNotice(friendlyError(error)); }
-  };
-
   return <main className={`app-shell ${presenting ? "presentation-mode" : ""}`}>
     <header className="topbar"><a href="/" className="logo">SLID<span>EX</span></a><div className="room-pill"><i /> {tr("LIVE ·")} {slug}</div><div className="top-actions"><LanguagePicker /><button className="share" onClick={() => setAccountOpen(true)}>{account?.isAnonymous ? "Save account" : "My account"}</button><a className="share" href="#participation" onClick={() => { setPresenting(false); setPanel("room"); }}>{tr("Participar ↓")}</a><button className="share present-action" onClick={() => setPresenting(!presenting)}>{presenting ? tr("Salir del escenario") : tr("Presentar ⤢")}</button><span className="status">{data.isHost ? tr("Presentador") : tr("Audiencia")} · {tr("participantCount", {count:data.participantCount})}</span><button className="share" onClick={() => void navigator.clipboard.writeText(`${window.location.origin}/?room=${slug}`).then(() => setNotice(tr("Enlace copiado; compártelo para invitar a la sala"))).catch(() => setNotice(tr("Copia el enlace desde la barra del navegador")))}>{tr("Invitar a la sala")}</button></div></header>
     {accountOpen && <AccountDialog account={account} history={history} signUp={signUp} signIn={signIn} signUpPending={signUpPending} signInPending={signInPending} onClose={() => setAccountOpen(false)} onSignOut={() => void signOut()} />}
@@ -113,7 +104,16 @@ function Slidex() {
     {notice && <div className="notice" role="status">{notice}<button aria-label={tr("Cerrar aviso")} onClick={() => setNotice("")}>×</button></div>}
     {data.isHost && <div className="host-toolbar"><span>{tr("Estudio en vivo")} <b> / {data.presentation.title}</b></span><button onClick={editCurrentSlide}>✎ Edit slide</button><button disabled={data.slides[0]?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index > 0) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index-1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("← Anterior")}</button><button disabled={data.slides.at(-1)?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index < data.slides.length-1) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index+1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("Siguiente →")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "constellation", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("✧ Constelación 3D")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "pulse", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("▥ Pulso de la sala")}</button></div>}
     <section className="deck-grid">
-      <aside className="navigator"><div className="nav-heading"><span>{tr("DECK /")} {data.slides.length.toString().padStart(2, "0")}</span>{data.isHost && <small>Drag to reorder</small>}</div>{data.slides.map((slide, index) => <button key={slide._id} disabled={!data.isHost} draggable={data.isHost} onDragStart={(event) => { setDraggedSlideId(slide._id); event.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDraggedSlideId(null)} onDragOver={(event) => { if (data.isHost) event.preventDefault(); }} onDrop={(event) => { event.preventDefault(); void moveSlide(slide._id); }} onClick={() => void setCurrentSlide({ presentationId: data.presentation._id, slideId: slide._id }).catch(error => setNotice(friendlyError(error)))} className={`thumb ${slide._id === current?._id ? "active" : ""} ${draggedSlideId === slide._id ? "dragging" : ""}`}><span>{String(index + 1).padStart(2, "0")}</span><b>{slide.title}</b><em>{tr(`kind.${slide.kind}`)}</em></button>)}</aside>
+      <SlideNavigator
+        slides={data.slides}
+        currentSlideId={current?._id}
+        isHost={data.isHost}
+        onSelect={(slideId) => void setCurrentSlide({ presentationId: data.presentation._id, slideId }).catch(error => setNotice(friendlyError(error)))}
+        onReorder={async (slideIds) => {
+          try { await reorderSlides({ presentationId: data.presentation._id, slideIds }); }
+          catch (error) { setNotice(friendlyError(error)); throw error; }
+        }}
+      />
       <section className={`stage ${current?.kind ?? "content"}`}>
         <div className="stage-meta"><span>{tr("SLIDE")} {String((current?.order ?? 0) + 1).padStart(2, "0")}</span><span>{current?.kind === "research" ? tr("✦ RESEARCH AGENT") : tr("● LIVE CANVAS")}</span></div>
         {data.presentation.showConclusions ? <ClosingWall presentationId={data.presentation._id} /> : <><div className="slide-copy" key={current?._id}><p className="accent-label">{current?.kind === "poll" ? tr("AUDIENCE TAKEOVER") : current?.kind === "research" ? tr("FRESHLY GENERATED") : tr("A REALTIME PRESENTATION SYSTEM")}</p><h1>{current?.title}</h1><p>{current?.body}</p></div>

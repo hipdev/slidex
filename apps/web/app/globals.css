@@ -330,8 +330,11 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .stage::after { display:none; }
 
 .nav-heading small { font-size:9px; color:#846355; }
-.navigator .thumb[draggable=true] { cursor:grab; }
-.navigator .thumb.dragging { opacity:.42; border-style:dashed; }
+.slide-sort-list { display:grid; gap:12px; }
+.navigator .slide-sort-list .thumb { margin-bottom:0; touch-action:none; will-change:transform; cursor:grab; }
+.navigator .slide-sort-list .thumb:active { cursor:grabbing; }
+.navigator .slide-sort-list .thumb.is-dragging { opacity:.16; }
+.slide-drag-overlay { width:100%; min-height:94px; box-sizing:border-box; pointer-events:none; cursor:grabbing; transform:rotate(1deg) scale(1.025); box-shadow:0 16px 30px #4d2b1b38; }
 .slide-image { position:relative; z-index:2; width:min(42%,440px); margin:0 0 18px auto; border-radius:13px; overflow:hidden; background:#fff8f0; box-shadow:0 10px 24px #4d2b1b24; }
 .slide-image img { display:block; width:100%; max-height:250px; object-fit:cover; }
 .slide-image figcaption { padding:7px 10px; font-size:10px; color:#654535; }
