@@ -27,6 +27,7 @@ type SlideNavigatorProps = {
   slides: Doc<"slides">[];
   currentSlideId?: Id<"slides">;
   isHost: boolean;
+  onCreate: () => void;
   onSelect: (slideId: Id<"slides">) => void;
   onReorder: (slideIds: Id<"slides">[]) => Promise<void>;
 };
@@ -66,7 +67,7 @@ function OverlayThumb({ slide, index }: { slide: Doc<"slides">; index: number })
   </div>;
 }
 
-export function SlideNavigator({ slides, currentSlideId, isHost, onSelect, onReorder }: SlideNavigatorProps) {
+export function SlideNavigator({ slides, currentSlideId, isHost, onCreate, onSelect, onReorder }: SlideNavigatorProps) {
   const [order, setOrder] = useState(() => slides.map((slide) => slide._id));
   const [activeId, setActiveId] = useState<Id<"slides"> | null>(null);
   const sensors = useSensors(
@@ -118,5 +119,6 @@ export function SlideNavigator({ slides, currentSlideId, isHost, onSelect, onReo
         {activeSlide && <OverlayThumb slide={activeSlide} index={orderedSlides.indexOf(activeSlide)} />}
       </DragOverlay>
     </DndContext>
+    {isHost && <button className="add-slide" onClick={onCreate} disabled={slides.length >= 50}><span aria-hidden="true">+</span>{tr("Crear slide")}<small>{tr(slides.length >= 50 ? "Máximo de 50 slides" : "Tu siguiente idea")}</small></button>}
   </aside>;
 }
