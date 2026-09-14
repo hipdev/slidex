@@ -412,3 +412,19 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 
 .copy-toast { position:fixed; z-index:100; bottom:24px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:16px; width:max-content; max-width:calc(100% - 32px); padding:8px 12px 8px 20px; border-radius:12px; background:#36231d; color:#fff9f2; box-shadow:0 8px 32px #241a1830; font-size:14px; }
 .copy-toast button { flex-shrink:0; width:44px; border:0; background:transparent; color:inherit; font-size:22px; }
+
+/* Room identity and a single primary presentation action. */
+.topbar { height:auto; min-height:80px; gap:24px; padding:14px 24px; }
+.header-identity { display:flex; align-items:center; gap:24px; min-width:0; flex:1; }
+.header-room { display:grid; gap:5px; min-width:0; border-left:1px solid #57413a; padding-left:24px; }
+.header-room strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; font-weight:600; }
+.header-room > span { display:flex; align-items:center; gap:6px; color:#d8c4b9; font-size:11px; }
+.header-room i { width:6px; height:6px; border-radius:50%; background:#ffa899; }
+.topbar .top-actions { gap:8px; flex-shrink:0; }
+.topbar .share { min-height:44px; padding:10px 14px; white-space:nowrap; }
+.topbar .account-action { display:grid; text-align:left; gap:3px; border-color:transparent; }
+.topbar .account-email { display:block; max-width:150px; font-size:10px; font-weight:400; }
+.topbar .language-picker select { border-color:transparent; background:transparent; font-size:12px; }
+.topbar .language-picker > span { display:none; }
+@media(max-width:1000px) { .topbar { flex-wrap:wrap; gap:12px; } .header-identity { min-width:220px; } }
+@media(max-width:680px) { .topbar { padding:12px 16px; } .header-identity { width:100%; } .header-room { padding-left:16px; } .topbar .top-actions { width:100%; flex-wrap:wrap; justify-content:flex-start; } .topbar .share { padding:8px 10px; } .topbar .present-action { margin-left:auto; } .topbar .account-email { max-width:110px; } }
