@@ -4,7 +4,7 @@ import { generate } from "./slideAgent";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { action, internalAction, mutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "@convex-dev/auth/core";
 
 export const request = mutation({
   args: { presentationId: v.id("presentations"), prompt: v.string(), url: v.optional(v.string()), locale: localeValidator },
@@ -33,7 +33,11 @@ export const run = internalAction({
       const [rawTitle = args.prompt, ...rest] = text.trim().split(/\n+/);
       const title = rawTitle.replace(/^#*\s*/, "").slice(0, 80);
       const body = rest.join(" ").trim().slice(0, 600) || "Research is ready for the room.";
-      await ctx.runMutation(internal.presentations.addSlide, { presentationId: args.presentationId, kind: "research", title, body, sourceUrls: source.urls });
+      const image = await findImage(args.prompt);
+      await ctx.runMutation(internal.presentations.addSlide, {
+        presentationId: args.presentationId, kind: "research", title, body, sourceUrls: source.urls,
+        ...(image ? { imageUrl: image.imageUrl, imageSourceUrl: image.sourceUrl } : {}),
+      });
       await ctx.runMutation(internal.presentations.updateOperation, { operationId: args.operationId, status: "complete", output: title });
     } catch (error) {
       await ctx.runMutation(internal.presentations.updateOperation, { operationId: args.operationId, status: "failed", error: error instanceof Error ? error.message : "Research failed" });
@@ -56,6 +60,21 @@ export async function scrape(url: string | undefined, prompt: string) {
     : (payload as FirecrawlSearchPayload).data?.web ?? [];
   if (!pages.length) throw new Error("No readable sources found. Try another topic or URL.");
   return { markdown: pages.map((page) => page.markdown ? `Source: ${page.url ?? url ?? "unknown"}\n${page.markdown}` : "").join("\n\n"), urls: pages.flatMap((page) => page.url ? [page.url] : url ? [url] : []) };
+}
+
+async function findImage(prompt: string): Promise<{ imageUrl: string; sourceUrl: string } | null> {
+  const key = process.env.FIRECRAWL_API_KEY;
+  if (!key) return null;
+  const response = await fetch("https://api.firecrawl.dev/v2/search", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ query: `${prompt} editorial presentation image`.slice(0, 500), sources: ["images"], limit: 5, safe: true }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!response.ok) return null;
+  const payload = await response.json() as { data?: { images?: Array<{ imageUrl?: string; url?: string }> } };
+  const match = payload.data?.images?.find((item) => item.imageUrl?.startsWith("https://") && item.url?.startsWith("https://"));
+  return match?.imageUrl && match.url ? { imageUrl: match.imageUrl, sourceUrl: match.url } : null;
 }
 
 type FirecrawlPage = { markdown?: string; url?: string };

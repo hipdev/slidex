@@ -19,6 +19,7 @@ import type * as moments from "../moments.js";
 import type * as presentations from "../presentations.js";
 import type * as research from "../research.js";
 import type * as slideAgent from "../slideAgent.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   presentations: typeof presentations;
   research: typeof research;
   slideAgent: typeof slideAgent;
+  users: typeof users;
 }>;
 
 /**
@@ -67,6 +69,10 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  auth: import("@convex-dev/auth/core/_generated/component.js").ComponentApi<"auth">;
+  authAnonymous: import("@convex-dev/auth/providers/anonymous/_generated/component.js").ComponentApi<"authAnonymous">;
+  authPasswordProvider: import("@convex-dev/auth/providers/password/_generated/component.js").ComponentApi<"authPasswordProvider">;
+  authUsername: import("@convex-dev/auth/username/_generated/component.js").ComponentApi<"authUsername">;
   agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
   staticHosting: import("@convex-dev/static-hosting/_generated/component.js").ComponentApi<"staticHosting">;
   rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;

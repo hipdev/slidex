@@ -2,8 +2,10 @@
 import { tr, friendlyError, useTranslation, useLocale } from "../i18n/provider";
 
 import { ConvexAuthProvider, useAuthActions, useConvexAuth } from "@convex-dev/auth/react";
+import { useAnonymousAuth } from "@convex-dev/auth/providers/anonymous/react";
+import { useSignInWithPassword, useSignUpWithPassword } from "@convex-dev/auth/providers/password/react";
 import { ConvexReactClient, useAction, useMutation, useQuery } from "convex/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { api } from "@slidex/backend/api";
 
 import dynamic from "next/dynamic";
@@ -21,7 +23,7 @@ export function SlidexShell() {
   useTranslation();
   const client = useMemo(() => convexUrl ? new ConvexReactClient(convexUrl) : null, []);
   if (!client) return <SetupNotice />;
-  return <ConvexAuthProvider client={client}><Slidex /></ConvexAuthProvider>;
+  return <ConvexAuthProvider client={client} api={{ refreshSession: api.auth.refreshSession, signOut: api.auth.signOut }}><Slidex /></ConvexAuthProvider>;
 }
 
 function SetupNotice() {
@@ -37,17 +39,25 @@ function Slidex() {
   const [inboxBusy, setInboxBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [panel, setPanel] = useState<"room" | "agent" | "twists">("agent");
+  const [draggedSlideId, setDraggedSlideId] = useState<string | null>(null);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
   const [researchPrompt, setResearchPrompt] = useState("");
   const [researchUrl, setResearchUrl] = useState("");
   const { isLoading, isAuthenticated } = useConvexAuth();
-  const { signIn } = useAuthActions();
+  const { signOut } = useAuthActions();
+  const { signInAnonymous } = useAnonymousAuth(api.auth.signInAnonymous);
+  const { signUp, pending: signUpPending } = useSignUpWithPassword(api.auth.signUpWithPassword);
+  const { signIn, pending: signInPending } = useSignInWithPassword(api.auth.signInWithPassword);
+  const account = useQuery(api.users.me, isAuthenticated ? {} : "skip");
+  const history = useQuery(api.presentations.listMine, isAuthenticated ? {} : "skip");
   const data = useQuery(api.presentations.getBySlug, slug ? { slug } : "skip");
   const createDemo = useMutation(api.presentations.createDemo);
   const join = useMutation(api.presentations.join);
   const react = useMutation(api.presentations.react);
   const vote = useMutation(api.presentations.vote);
   const setCurrentSlide = useMutation(api.presentations.setCurrentSlide);
+  const reorderSlides = useMutation(api.presentations.reorderSlides);
   const connectInbox = useAction(api.inbox.connect);
   const syncInbox = useAction(api.inbox.sync);
   const emailToSlide = useMutation(api.inbox.turnIntoSlide);
@@ -61,8 +71,8 @@ function Slidex() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) void signIn("anonymous").catch(error => setNotice(friendlyError(error)));
-  }, [isAuthenticated, isLoading, signIn]);
+    if (!isLoading && !isAuthenticated) void signInAnonymous().catch(error => setNotice(friendlyError(error)));
+  }, [isAuthenticated, isLoading, signInAnonymous]);
 
   useEffect(() => {
     if (data?.presentation && isAuthenticated) void join({ presentationId: data.presentation._id }).catch(error => setNotice(friendlyError(error)));
@@ -73,7 +83,7 @@ function Slidex() {
   };
 
   if (isLoading || !isAuthenticated) return <main className="setup"><p className="eyebrow">{tr("CONVEX AUTH")}</p><h1>{tr("Preparando tu entrada…")}</h1>{notice && <p role="alert">{notice}</p>}</main>;
-  if (!slug) return <Launchpad onCreate={createRoom} notice={notice} />;
+  if (!slug) return <><Launchpad onCreate={createRoom} notice={notice} account={account} history={history} onAccount={() => setAccountOpen(true)} />{accountOpen && <AccountDialog account={account} history={history} signUp={signUp} signIn={signIn} signUpPending={signUpPending} signInPending={signInPending} onClose={() => setAccountOpen(false)} onSignOut={() => void signOut()} />}</>;
   if (data === undefined) return <main className="setup"><p className="eyebrow">{tr("CONNECTING TO")} {slug}</p><h1>{tr("Waking the room…")}</h1></main>;
   if (data === null) return <main className="setup"><div className="setup-card"><span className="eyebrow">{tr("ROOM NOT FOUND")}</span><h1>{slug} {tr("is not live.")}</h1><button onClick={() => setSlug(null)}>{tr("Create a new live room")}</button></div></main>;
 
@@ -83,16 +93,31 @@ function Slidex() {
   const totalVotes = Object.values(votes).reduce((sum, item) => sum + item, 0);
   const isPoll = current?.kind === "poll";
 
+  const editCurrentSlide = () => {
+    setPresenting(false); setPanel("agent");
+    window.setTimeout(() => { const editor = document.getElementById("slide-editor") as HTMLDetailsElement | null; if (editor) { editor.open = true; editor.scrollIntoView({ behavior: "smooth", block: "center" }); } }, 0);
+  };
+  const moveSlide = async (targetId: string) => {
+    if (!draggedSlideId || draggedSlideId === targetId) return;
+    const reordered = [...data.slides]; const from = reordered.findIndex((slide) => slide._id === draggedSlideId); const to = reordered.findIndex((slide) => slide._id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moving] = reordered.splice(from, 1); reordered.splice(to, 0, moving);
+    setDraggedSlideId(null);
+    try { await reorderSlides({ presentationId: data.presentation._id, slideIds: reordered.map((slide) => slide._id) }); } catch (error) { setNotice(friendlyError(error)); }
+  };
+
   return <main className={`app-shell ${presenting ? "presentation-mode" : ""}`}>
-    <header className="topbar"><a href="/" className="logo">SLID<span>EX</span></a><div className="room-pill"><i /> {tr("LIVE ·")} {slug}</div><div className="top-actions"><LanguagePicker /><a className="share" href="#participation" onClick={() => { setPresenting(false); setPanel("room"); }}>{tr("Participar ↓")}</a><button className="share present-action" onClick={() => setPresenting(!presenting)}>{presenting ? tr("Salir del escenario") : tr("Presentar ⤢")}</button><span className="status">{data.isHost ? tr("Presentador") : tr("Audiencia")} · {tr("participantCount", {count:data.participantCount})}</span><button className="share" onClick={() => void navigator.clipboard.writeText(`${window.location.origin}/?room=${slug}`).then(() => setNotice(tr("Enlace copiado; compártelo para invitar a la sala"))).catch(() => setNotice(tr("Copia el enlace desde la barra del navegador")))}>{tr("Invitar a la sala")}</button></div></header>
+    <header className="topbar"><a href="/" className="logo">SLID<span>EX</span></a><div className="room-pill"><i /> {tr("LIVE ·")} {slug}</div><div className="top-actions"><LanguagePicker /><button className="share" onClick={() => setAccountOpen(true)}>{account?.isAnonymous ? "Save account" : "My account"}</button><a className="share" href="#participation" onClick={() => { setPresenting(false); setPanel("room"); }}>{tr("Participar ↓")}</a><button className="share present-action" onClick={() => setPresenting(!presenting)}>{presenting ? tr("Salir del escenario") : tr("Presentar ⤢")}</button><span className="status">{data.isHost ? tr("Presentador") : tr("Audiencia")} · {tr("participantCount", {count:data.participantCount})}</span><button className="share" onClick={() => void navigator.clipboard.writeText(`${window.location.origin}/?room=${slug}`).then(() => setNotice(tr("Enlace copiado; compártelo para invitar a la sala"))).catch(() => setNotice(tr("Copia el enlace desde la barra del navegador")))}>{tr("Invitar a la sala")}</button></div></header>
+    {accountOpen && <AccountDialog account={account} history={history} signUp={signUp} signIn={signIn} signUpPending={signUpPending} signInPending={signInPending} onClose={() => setAccountOpen(false)} onSignOut={() => void signOut()} />}
     {data.isHost && current && <InterventionCue slideId={current._id} onReview={() => { setPresenting(false); setPanel("twists"); }} />}
     {notice && <div className="notice" role="status">{notice}<button aria-label={tr("Cerrar aviso")} onClick={() => setNotice("")}>×</button></div>}
-    {data.isHost && <div className="host-toolbar"><span>{tr("Estudio en vivo")} <b> / {data.presentation.title}</b></span><button disabled={data.slides[0]?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index > 0) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index-1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("← Anterior")}</button><button disabled={data.slides.at(-1)?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index < data.slides.length-1) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index+1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("Siguiente →")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "constellation", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("✧ Constelación 3D")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "pulse", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("▥ Pulso de la sala")}</button></div>}
+    {data.isHost && <div className="host-toolbar"><span>{tr("Estudio en vivo")} <b> / {data.presentation.title}</b></span><button onClick={editCurrentSlide}>✎ Edit slide</button><button disabled={data.slides[0]?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index > 0) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index-1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("← Anterior")}</button><button disabled={data.slides.at(-1)?._id === current?._id} onClick={() => { const index = data.slides.findIndex(s => s._id === current?._id); if (index < data.slides.length-1) void setCurrentSlide({ presentationId: data.presentation._id, slideId: data.slides[index+1]._id }).catch(error => setNotice(friendlyError(error))); }}>{tr("Siguiente →")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "constellation", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("✧ Constelación 3D")}</button><button onClick={() => void addVisual({ presentationId: data.presentation._id, visual: "pulse", locale }).catch(error => setNotice(friendlyError(error)))}>{tr("▥ Pulso de la sala")}</button></div>}
     <section className="deck-grid">
-      <aside className="navigator"><div className="nav-heading"><span>{tr("DECK /")} {data.slides.length.toString().padStart(2, "0")}</span></div>{data.slides.map((slide, index) => <button key={slide._id} disabled={!data.isHost} onClick={() => void setCurrentSlide({ presentationId: data.presentation._id, slideId: slide._id }).catch(error => setNotice(friendlyError(error)))} className={`thumb ${slide._id === current?._id ? "active" : ""}`}><span>{String(index + 1).padStart(2, "0")}</span><b>{slide.title}</b><em>{tr(`kind.${slide.kind}`)}</em></button>)}</aside>
+      <aside className="navigator"><div className="nav-heading"><span>{tr("DECK /")} {data.slides.length.toString().padStart(2, "0")}</span>{data.isHost && <small>Drag to reorder</small>}</div>{data.slides.map((slide, index) => <button key={slide._id} disabled={!data.isHost} draggable={data.isHost} onDragStart={(event) => { setDraggedSlideId(slide._id); event.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => setDraggedSlideId(null)} onDragOver={(event) => { if (data.isHost) event.preventDefault(); }} onDrop={(event) => { event.preventDefault(); void moveSlide(slide._id); }} onClick={() => void setCurrentSlide({ presentationId: data.presentation._id, slideId: slide._id }).catch(error => setNotice(friendlyError(error)))} className={`thumb ${slide._id === current?._id ? "active" : ""} ${draggedSlideId === slide._id ? "dragging" : ""}`}><span>{String(index + 1).padStart(2, "0")}</span><b>{slide.title}</b><em>{tr(`kind.${slide.kind}`)}</em></button>)}</aside>
       <section className={`stage ${current?.kind ?? "content"}`}>
         <div className="stage-meta"><span>{tr("SLIDE")} {String((current?.order ?? 0) + 1).padStart(2, "0")}</span><span>{current?.kind === "research" ? tr("✦ RESEARCH AGENT") : tr("● LIVE CANVAS")}</span></div>
         {data.presentation.showConclusions ? <ClosingWall presentationId={data.presentation._id} /> : <><div className="slide-copy" key={current?._id}><p className="accent-label">{current?.kind === "poll" ? tr("AUDIENCE TAKEOVER") : current?.kind === "research" ? tr("FRESHLY GENERATED") : tr("A REALTIME PRESENTATION SYSTEM")}</p><h1>{current?.title}</h1><p>{current?.body}</p></div>
+        {current?.imageUrl && <figure className="slide-image"><img src={current.imageUrl} alt="Related visual" referrerPolicy="no-referrer" />{current.imageSourceUrl && <figcaption><a href={current.imageSourceUrl} target="_blank" rel="noreferrer">Image source ↗</a></figcaption>}</figure>}
         {current?.visual && <LiveVisual presentationId={data.presentation._id} visual={current.visual} reactions={reactions} />}
         {isPoll && <div className="poll-results">{current.choices?.map((choice) => { const value = votes[choice.id] ?? 0; const pct = totalVotes ? Math.round(value / totalVotes * 100) : 0; return <button key={choice.id} onClick={() => void vote({ presentationId: data.presentation._id, slideId: current._id, choiceId: choice.id }).catch(error => setNotice(friendlyError(error)))}><span>{choice.label}</span><strong>{pct}%</strong><i style={{ width: `${Math.max(pct, 2)}%` }} /></button>; })}<small>{totalVotes} {tr("live votes")}</small></div>}
         </>}<div className="reaction-strip">{([ ["fire", "🔥"], ["mind", "🤯"], ["heart", "♥"], ["question", "?" ]] as const).map(([key, icon]) => <button key={key} onClick={() => current && void react({ presentationId: data.presentation._id, slideId: current._id, emoji: key }).catch(error => setNotice(friendlyError(error)))}><span>{icon}</span><b>{reactions[key] ?? 0}</b></button>)}</div>
@@ -105,11 +130,38 @@ function Slidex() {
   </main>;
 }
 
-function Launchpad({ onCreate, notice }: { onCreate: () => Promise<void>; notice: string }) {
+function Launchpad({ onCreate, notice, account, history, onAccount }: { onCreate: () => Promise<void>; notice: string; account: { isAnonymous?: boolean } | null | undefined; history: { title: string; slug: string }[] | undefined; onAccount: () => void }) {
   useTranslation();
   const [busy,setBusy] = useState(false);
   const [code,setCode] = useState("");
-  return <main className="launchpad"><div className="hero-grid"><div className="landing-top"><span className="eyebrow">{tr("SLIDEX / BETA")}</span><LanguagePicker /></div><h1>{tr("Tu próxima charla,")}<br /><em>{tr("viva.")}</em></h1><p>{tr("Una presentación que escucha. Tu audiencia propone, la web aporta y las mejores ideas llegan al escenario.")}</p><button disabled={busy} onClick={async () => { setBusy(true); try { await onCreate(); } finally { setBusy(false); } }}>{busy ? tr("Creando tu sala…") : tr("Crear una sala en vivo")} <span>↗</span></button>{notice && <p role="alert">{notice}</p>}<form className="join-form" onSubmit={event => { event.preventDefault(); window.location.assign(`?room=${encodeURIComponent(code.trim().toUpperCase())}`); }}><label htmlFor="room-code">{tr("¿Vienes como audiencia?")}</label><div><input id="room-code" required pattern="[Ll][Ii][Vv][Ee]-[A-Za-z0-9]+" maxLength={20} value={code} onChange={e => setCode(e.target.value)} placeholder={tr("Código LIVE-XXXXX")}/><button disabled={!code.trim()}>{tr("Unirme →")}</button></div></form><small>{tr("Convex · OpenAI · Firecrawl · AgentMail")}</small></div><div className="manifesto"><div className="signal">✦</div><p>{tr("“El último slide todavía no existe. Lo escribirá tu audiencia.”")}</p><div className="feature-list"><span>{tr("01 · Crea tu sala y comparte el enlace")}</span><span>{tr("02 · Presenta, escucha y acepta ideas")}</span><span>{tr("03 · Cierra con lo que descubrieron juntos")}</span></div></div></main>;
+  return <main className="launchpad"><div className="hero-grid"><div className="landing-top"><span className="eyebrow">{tr("SLIDEX / BETA")}</span><div className="landing-actions"><button className="account-link" onClick={onAccount}>{account?.isAnonymous ? "Save your work" : "My presentations"}{history?.length ? ` (${history.length})` : ""}</button><LanguagePicker /></div></div><h1>{tr("Tu próxima charla,")}<br /><em>{tr("viva.")}</em></h1><p>{tr("Una presentación que escucha. Tu audiencia propone, la web aporta y las mejores ideas llegan al escenario.")}</p><button disabled={busy} onClick={async () => { setBusy(true); try { await onCreate(); } finally { setBusy(false); } }}>{busy ? tr("Creando tu sala…") : tr("Crear una sala en vivo")} <span>↗</span></button>{notice && <p role="alert">{notice}</p>}<form className="join-form" onSubmit={event => { event.preventDefault(); window.location.assign(`?room=${encodeURIComponent(code.trim().toUpperCase())}`); }}><label htmlFor="room-code">{tr("¿Vienes como audiencia?")}</label><div><input id="room-code" required pattern="[Ll][Ii][Vv][Ee]-[A-Za-z0-9]+" maxLength={20} value={code} onChange={e => setCode(e.target.value)} placeholder={tr("Código LIVE-XXXXX")}/><button disabled={!code.trim()}>{tr("Unirme →")}</button></div></form><small>{tr("Convex · OpenAI · Firecrawl · AgentMail")}</small></div><div className="manifesto"><div className="signal">✦</div><p>{tr("“El último slide todavía no existe. Lo escribirá tu audiencia.”")}</p><div className="feature-list"><span>{tr("01 · Crea tu sala y comparte el enlace")}</span><span>{tr("02 · Presenta, escucha y acepta ideas")}</span><span>{tr("03 · Cierra con lo que descubrieron juntos")}</span></div></div></main>;
+}
+
+type PasswordResult = { success: boolean; userError?: { error: string; minimumLength?: number; retryAfterMs?: number } };
+
+function AccountDialog({ account, history, signUp, signIn, signUpPending, signInPending, onClose, onSignOut }: { account: { email?: string; isAnonymous?: boolean } | null | undefined; history: { title: string; slug: string; status: string; createdAt: number }[] | undefined; signUp: (credentials: { username: string; password: string }) => Promise<PasswordResult>; signIn: (credentials: { username: string; password: string }) => Promise<PasswordResult>; signUpPending: boolean; signInPending: boolean; onClose: () => void; onSignOut: () => void }) {
+  const [mode, setMode] = useState<"upgrade" | "signIn">(account?.isAnonymous ? "upgrade" : "signIn");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const pending = signUpPending || signInPending;
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); setError("");
+    const result = mode === "upgrade" ? await signUp({ username: email, password }) : await signIn({ username: email, password });
+    if (result.success) { setPassword(""); onClose(); return; }
+    setError(passwordError(result.userError));
+  };
+  return <div className="account-backdrop" role="presentation" onMouseDown={onClose}><section className="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-title" onMouseDown={event => event.stopPropagation()}><button className="dialog-close" aria-label="Close account" onClick={onClose}>×</button><p className="eyebrow">YOUR SLIDEX ACCOUNT</p><h2 id="account-title">{account?.isAnonymous ? "Save your presentations" : "Your presentations"}</h2>{account?.isAnonymous ? <p>You're using a private anonymous session. Create an account to keep this work and open it again on any device.</p> : <p>{account?.email ? `Signed in as ${account.email}.` : "Sign in to see your saved presentations."}</p>}<form onSubmit={submit}><label>Email<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required disabled={pending} /></label><label>Password<input type="password" autoComplete={mode === "upgrade" ? "new-password" : "current-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} required disabled={pending} /></label>{error && <p className="account-error" role="alert">{error}</p>}<button className="primary" disabled={pending}>{pending ? "Please wait…" : mode === "upgrade" ? "Create account & save work" : "Sign in"}</button></form><button className="account-switch" onClick={() => { setMode(mode === "upgrade" ? "signIn" : "upgrade"); setError(""); }}>{mode === "upgrade" ? "Already have an account? Sign in" : "New here? Create an account"}</button>{history && <div className="presentation-history"><h3>Presentation history</h3>{history.length ? history.map(item => <a key={item.slug} href={`/?room=${item.slug}`}><span>{item.title}</span><small>{item.status} · {new Date(item.createdAt).toLocaleDateString()}</small></a>) : <p>No presentations yet.</p>}</div>} {!account?.isAnonymous && <button className="account-signout" onClick={onSignOut}>Sign out</button>}</section></div>;
+}
+
+function passwordError(error?: { error: string; minimumLength?: number; retryAfterMs?: number }) {
+  if (!error) return "Something went wrong. Please try again.";
+  if (error.error === "USERNAME_TAKEN") return "An account already exists for this email. Sign in instead.";
+  if (error.error === "USER_NOT_FOUND") return "No account exists for this email.";
+  if (error.error === "INVALID_CREDENTIALS") return "Incorrect email or password.";
+  if (error.error === "PASSWORD_TOO_SHORT") return `Password must be at least ${error.minimumLength ?? 8} characters.`;
+  if (error.error === "RATE_LIMITED") return `Too many attempts. Try again in ${Math.ceil((error.retryAfterMs ?? 0) / 1000)} seconds.`;
+  return "Please check your details and try again.";
 }
 
 function countBy<T extends Record<string, unknown>>(items: T[], key: keyof T) {

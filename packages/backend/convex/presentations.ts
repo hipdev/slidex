@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "@convex-dev/auth/core";
 
 const emoji = v.union(v.literal("fire"), v.literal("mind"), v.literal("heart"), v.literal("question"));
 
@@ -55,6 +55,27 @@ export const getBySlug = query({
     const inbox = isHost ? await ctx.db.query("inboxItems").withIndex("by_presentation_and_received", (q) => q.eq("presentationId", presentation._id)).order("desc").take(8) : [];
     const operations = await ctx.db.query("operations").withIndex("by_presentation_and_creation", (q) => q.eq("presentationId", presentation._id)).order("desc").take(8);
     return { presentation, slides, reactions, votes, inbox, operations, isHost, participantCount: attendees.length };
+  },
+});
+
+export const listMine = query({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("presentations"),
+    title: v.string(),
+    slug: v.string(),
+    status: v.union(v.literal("draft"), v.literal("live"), v.literal("ended")),
+    createdAt: v.number(),
+  })),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const presentations = await ctx.db
+      .query("presentations")
+      .withIndex("by_ownerId", (q) => q.eq("ownerId", userId))
+      .order("desc")
+      .take(50);
+    return presentations.map(({ _id, title, slug, status, createdAt }) => ({ _id, title, slug, status, createdAt }));
   },
 });
 
@@ -113,12 +134,25 @@ export const setCurrentSlide = mutation({
 });
 
 export const addSlide = internalMutation({
-  args: { presentationId: v.id("presentations"), kind: v.union(v.literal("research"), v.literal("content")), title: v.string(), body: v.string(), sourceUrls: v.array(v.string()) },
+  args: { presentationId: v.id("presentations"), kind: v.union(v.literal("research"), v.literal("content")), title: v.string(), body: v.string(), sourceUrls: v.array(v.string()), imageUrl: v.optional(v.string()), imageSourceUrl: v.optional(v.string()) },
   returns: v.id("slides"),
   handler: async (ctx, args) => {
     const last = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", args.presentationId)).order("desc").first();
     if ((last?.order ?? 0) >= 49) throw new Error("This deck has reached its 50 slide limit");
     return await ctx.db.insert("slides", { ...args, order: (last?.order ?? -1) + 1, generatedAt: Date.now() });
+  },
+});
+
+export const reorderSlides = mutation({
+  args: { presentationId: v.id("presentations"), slideIds: v.array(v.id("slides")) },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireOwner(ctx, args.presentationId);
+    if (!args.slideIds.length || args.slideIds.length > 50 || new Set(args.slideIds).size !== args.slideIds.length) throw new Error("Invalid slide order");
+    const existing = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", args.presentationId)).take(50);
+    if (existing.length !== args.slideIds.length || existing.some((slide) => !args.slideIds.includes(slide._id))) throw new Error("The slide order does not match this presentation");
+    await Promise.all(args.slideIds.map((slideId, order) => ctx.db.patch(slideId, { order })));
+    return null;
   },
 });
 

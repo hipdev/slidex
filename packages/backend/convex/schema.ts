@@ -1,6 +1,5 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 const slideKind = v.union(
   v.literal("title"),
@@ -11,7 +10,19 @@ const slideKind = v.union(
 );
 
 export default defineSchema({
-  ...authTables,
+  // App-owned identities. Auth v2 stores sessions and provider credentials in
+  // isolated components. Legacy fields stay optional to allow a safe deploy
+  // over the former Convex Auth v1 table.
+  users: defineTable({
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    createdAt: v.optional(v.number()),
+  }).index("by_email", ["email"]),
   presentations: defineTable({
     title: v.string(),
     slug: v.string(),
@@ -25,7 +36,7 @@ export default defineSchema({
     voiceEnabled: v.optional(v.boolean()),
     agentInboxId: v.optional(v.string()),
     moment: v.optional(v.object({ caption: v.string(), imageUrl: v.optional(v.string()), sourceUrl: v.optional(v.string()), createdAt: v.number() })),
-  }).index("by_slug", ["slug"]).index("by_agentInboxId", ["agentInboxId"]),
+  }).index("by_slug", ["slug"]).index("by_agentInboxId", ["agentInboxId"]).index("by_ownerId", ["ownerId"]),
   slides: defineTable({
     presentationId: v.id("presentations"),
     order: v.number(),
@@ -34,6 +45,8 @@ export default defineSchema({
     body: v.string(),
     choices: v.optional(v.array(v.object({ id: v.string(), label: v.string() }))),
     sourceUrls: v.optional(v.array(v.string())),
+    imageUrl: v.optional(v.string()),
+    imageSourceUrl: v.optional(v.string()),
     generatedAt: v.optional(v.number()),
     visual: v.optional(v.union(v.literal("constellation"), v.literal("pulse"))),
   }).index("by_presentation_and_order", ["presentationId", "order"]),

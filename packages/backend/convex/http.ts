@@ -3,12 +3,9 @@ import { registerStaticRoutes } from "@convex-dev/static-hosting";
 import { components, internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
-import { auth } from "./auth";
 import { Webhook, WebhookVerificationError } from "svix";
 
 const http = httpRouter();
-
-auth.addHttpRoutes(http);
 
 http.route({
   path: "/agentmail",

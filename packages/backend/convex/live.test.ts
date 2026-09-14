@@ -123,3 +123,29 @@ test("English rooms and visual slides use the requested language without rewriti
   expect(updated.slides.find(s => s._id === visual)?.title).toBe("This is how the room feels.");
   expect((await host.query(api.presentations.getBySlug, { slug: room.slug }))!.slides[0].body).toBe(data.slides[0].body);
 });
+
+test("hosts can edit the opening slide, attach an image, and reorder the deck", async () => {
+  const { host, guest, room, data } = await fixture();
+  await host.mutation(api.live.saveSlide, {
+    presentationId: room.presentationId,
+    slideId: data.slides[0]._id,
+    title: "A better opening",
+    body: "An editable opening slide.",
+    imageUrl: "https://images.example.com/opening.jpg",
+    imageSourceUrl: "https://example.com/opening",
+  });
+  await expect(guest.mutation(api.presentations.reorderSlides, {
+    presentationId: room.presentationId,
+    slideIds: [...data.slides].reverse().map((slide) => slide._id),
+  })).rejects.toThrow("Only the presentation host");
+  const reorderedIds = [data.slides[2]._id, data.slides[0]._id, data.slides[1]._id];
+  await host.mutation(api.presentations.reorderSlides, { presentationId: room.presentationId, slideIds: reorderedIds });
+  const updated = (await host.query(api.presentations.getBySlug, { slug: room.slug }))!;
+  expect(updated.slides.map((slide) => slide._id)).toEqual(reorderedIds);
+  expect(updated.slides[1]).toMatchObject({
+    title: "A better opening",
+    body: "An editable opening slide.",
+    imageUrl: "https://images.example.com/opening.jpg",
+    imageSourceUrl: "https://example.com/opening",
+  });
+});

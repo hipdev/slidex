@@ -329,6 +329,35 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 /* Keep decorative lettering from creating a scroll area beyond the slide. */
 .stage::after { display:none; }
 
+.nav-heading small { font-size:9px; color:#846355; }
+.navigator .thumb[draggable=true] { cursor:grab; }
+.navigator .thumb.dragging { opacity:.42; border-style:dashed; }
+.slide-image { position:relative; z-index:2; width:min(42%,440px); margin:0 0 18px auto; border-radius:13px; overflow:hidden; background:#fff8f0; box-shadow:0 10px 24px #4d2b1b24; }
+.slide-image img { display:block; width:100%; max-height:250px; object-fit:cover; }
+.slide-image figcaption { padding:7px 10px; font-size:10px; color:#654535; }
+.slide-image figcaption a { text-decoration:underline; }
+@media (max-width:680px) { .slide-image { width:100%; margin:0 0 14px; } .slide-image img { max-height:190px; } }
+
+/* Account persistence and history */
+.landing-actions { display:flex; align-items:center; gap:10px; }
+.account-link { min-height:40px; padding:8px 11px; border:1px solid #9f806d; border-radius:9px; background:#fffaf4; color:#5e3829; font:700 12px Manrope,sans-serif; }
+.account-backdrop { position:fixed; z-index:100; inset:0; display:grid; place-items:center; padding:20px; background:#21161099; backdrop-filter:blur(5px); }
+.account-dialog { position:relative; width:min(520px,100%); max-height:calc(100dvh - 40px); overflow:auto; background:#fffaf4; color:#3c281f; border-radius:18px; box-shadow:0 25px 80px #1c0d09aa; padding:30px; }
+.account-dialog h2 { font:600 32px/1.1 'Playfair Display', Georgia, serif; margin:8px 35px 12px 0; letter-spacing:-.025em; }
+.account-dialog > p { color:#73574a; font-size:14px; line-height:1.65; margin:0 0 20px; }
+.dialog-close { position:absolute; right:16px; top:16px; min-height:36px; width:36px; border:0; border-radius:50%; background:#f0e4d8; color:#4d2d20; font-size:25px; line-height:1; }
+.account-dialog form { display:grid; gap:12px; }
+.account-dialog label { display:grid; gap:6px; color:#5b3b2d; font:700 12px Manrope,sans-serif; }
+.account-dialog input { width:100%; border:1px solid #bca393; border-radius:9px; padding:11px 12px; background:white; color:#332119; font-size:16px; }
+.account-dialog .primary { border:0; border-radius:10px; background:var(--brand); color:white; min-height:46px; margin-top:4px; font-weight:800; }
+.account-error { margin:0; color:#a32e22; font-size:13px; }
+.account-switch, .account-signout { margin-top:14px; border:0; background:transparent; color:#8d3528; font-size:12px; font-weight:800; text-decoration:underline; padding:4px 0; min-height:28px; }
+.presentation-history { margin-top:25px; padding-top:18px; border-top:1px solid #dfcbbb; }
+.presentation-history h3 { margin:0 0 10px; font-size:13px; letter-spacing:.02em; }
+.presentation-history > a { display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid #ecddd1; color:#583529; font-size:13px; font-weight:700; }
+.presentation-history > a small { color:#8d7061; font-size:10px; text-transform:capitalize; text-align:right; }
+.presentation-history > p { color:#846759; font-size:13px; }
+
 /* Audience twists: invitation, actions, then the live conversation. */
 .agent-panel .interventions-panel { padding:6px 0 18px; margin:0; }
 .agent-panel .interventions-panel > .panel-title .eyebrow { color:#866352; font-size:10px; letter-spacing:.1em; }

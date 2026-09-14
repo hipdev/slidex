@@ -1,7 +1,7 @@
 import { localeValidator, languageName } from "./language";
 import { limits } from "./limits";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "@convex-dev/auth/core";
 import { mutation, query } from "./_generated/server";
 import { requireOwner, requireSlide } from "./presentations";
 import schema from "./schema";
@@ -86,15 +86,19 @@ export const addVisual = mutation({
 });
 
 export const saveSlide = mutation({
-  args: { presentationId: v.id("presentations"), slideId: v.optional(v.id("slides")), title: v.string(), body: v.string() }, returns: v.id("slides"),
+  args: { presentationId: v.id("presentations"), slideId: v.optional(v.id("slides")), title: v.string(), body: v.string(), imageUrl: v.optional(v.string()), imageSourceUrl: v.optional(v.string()) }, returns: v.id("slides"),
   handler: async (ctx, args) => {
     await requireOwner(ctx,args.presentationId);
     const title=args.title.trim(); const body=args.body.trim();
     if(!title || title.length>100 || body.length>2000)throw new Error("Use a title up to 100 characters and body up to 2000 characters");
-    if(args.slideId){await requireSlide(ctx,args.presentationId,args.slideId);await ctx.db.patch(args.slideId,{title,body});return args.slideId;}
+    const imageUrl = args.imageUrl?.trim();
+    const imageSourceUrl = args.imageSourceUrl?.trim();
+    if ((imageUrl && !/^https:\/\//i.test(imageUrl)) || (imageSourceUrl && !/^https?:\/\//i.test(imageSourceUrl))) throw new Error("Use a valid image URL");
+    const imagePatch = { imageUrl: imageUrl || undefined, imageSourceUrl: imageSourceUrl || undefined };
+    if(args.slideId){await requireSlide(ctx,args.presentationId,args.slideId);await ctx.db.patch(args.slideId,{title,body,...imagePatch});return args.slideId;}
     const last=await ctx.db.query("slides").withIndex("by_presentation_and_order",q=>q.eq("presentationId",args.presentationId)).order("desc").first();
     if((last?.order??0)>=49)throw new Error("This deck has reached its 50 slide limit");
-    const slideId=await ctx.db.insert("slides",{presentationId:args.presentationId,title,body,kind:"content",order:(last?.order??0)+1});
+    const slideId=await ctx.db.insert("slides",{presentationId:args.presentationId,title,body,kind:"content",order:(last?.order??0)+1,...imagePatch});
     await ctx.db.patch(args.presentationId,{currentSlideId:slideId,showConclusions:false});return slideId;
   },
 });
