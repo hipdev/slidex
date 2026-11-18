@@ -12,7 +12,7 @@ void i18n.use(initReactI18next).init({
   keySeparator: false, nsSeparator: false, interpolation: { escapeValue: false },
   initAsync: false, react: { useSuspense: false },
 });
-export const tr = (key: string, options?: Record<string, unknown>) => String(i18n.t(key, options));
+export const tr = (key: string, options?: Record<string, unknown>) => String(i18n.t(key, options ?? {}));
 export function useLocale() { const { i18n } = useTranslation(); return i18n.language === "en" ? "en" : "es"; }
 export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {

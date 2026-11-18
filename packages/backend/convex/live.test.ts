@@ -4,12 +4,15 @@ import { expect, test } from "vitest";
 import { api } from "./_generated/api";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "./schema";
+import { registerCore, sessionIdentity } from "@convex-dev/auth/test";
 const modules=import.meta.glob("./**/*.ts");
 async function fixture(){
   const t=convexTest(schema,modules);
   rateLimiterTest.register(t);
-  const [hostId,guestId]=await t.run(async ctx=>[await ctx.db.insert("users",{}),await ctx.db.insert("users",{})]);
-  const host=t.withIdentity({subject:hostId});const guest=t.withIdentity({subject:guestId});
+  registerCore(t);
+  const hostTokens = await t.mutation(api.auth.signInAnonymous, {});
+  const guestTokens = await t.mutation(api.auth.signInAnonymous, {});
+  const host=t.withIdentity(sessionIdentity(hostTokens));const guest=t.withIdentity(sessionIdentity(guestTokens));
   const room=await host.mutation(api.presentations.createDemo,{ownerName:"Host"});
   const data=(await host.query(api.presentations.getBySlug,{slug:room.slug}))!;
   return {t,host,guest,room,data};

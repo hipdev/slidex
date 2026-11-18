@@ -61,6 +61,18 @@ pnpm --filter=@slidex/backend exec convex dev --once
 
 Tests cover independent host/guest identities, cross-room references, invalid votes, endorsement toggling, idempotent moderation, closing selection, voice opt-in, AgentMail signature verification, malformed payloads and replay deduplication.
 
+## Authentication
+
+Uses stable `@convex-dev/auth` 2.0 with `convexAuthProvider()`, a session-aware React provider and the username/password components. Email addresses serve as usernames; email verification is not enabled. Existing password/username components retain their mounted names so accounts and password hashes survive upgrades.
+
+Guest sign-in and guest-to-account upgrades use a small backend adapter because 2.0 does not expose a public anonymous method. Auth owns password hashing, session storage, signing, refresh and revocation. The adapter resolves the guest identity before crossing component boundaries and upgrades the same app user inside a transaction; failed signup rolls everything back. Its component API calls are pinned to Auth 2.0 and covered by integration tests.
+
+When upgrading an alpha deployment, export a full snapshot first. Alpha session documents are incompatible with stable 2.0. Remove expired sessions from the `auth/sessions` component table before deploying; do not clear user, username or password tables. On this development deployment all 11 legacy sessions had expired on October 14, 2026, and were removed after backup during the November 18 migration. Existing accounts sign in again with their password; expired anonymous sessions cannot recover their identity.
+
+Auth tests exercise real Argon2 WASM, guest upgrades with retained room ownership, login, token refresh and revocation. Vitest loads WASM bytes through a small plugin to match Convex's runtime.
+
+Setup follows [Convex Auth getting started](https://docs.convex.dev/auth/convex-auth/getting-started).
+
 ## Backend environment
 
 Configure secrets in Convex, never in the browser:
@@ -68,7 +80,7 @@ Configure secrets in Convex, never in the browser:
 - `FIRECRAWL_API_KEY`
 - `AGENTMAIL_API_KEY`
 - `OPENAI_API_KEY` (optional when Convex AI Gateway is enabled for the team)
-- `JWT_PRIVATE_KEY`, `JWKS`, `SITE_URL` for Convex Auth
+- Convex Auth 2.0 signs tokens with the deployment key; no auth signing secrets are required.
 - `AGENTMAIL_WEBHOOK_SECRET` for optional push delivery
 
 The current deployment has working Firecrawl, AgentMail and Convex Auth settings. OpenAI via Convex AI Gateway was verified with real research and meme requests. The optional AgentMail webhook signing secret is not configured; **Consultar correos** works without it.
@@ -88,7 +100,7 @@ Set its signing secret as `AGENTMAIL_WEBHOOK_SECRET` in Convex. The handler veri
 pnpm --filter=@slidex/backend exec convex dev --once
 pnpm deploy:demo
 
-# Deploy production after configuring its own auth and provider secrets:
+# Deploy production after configuring its provider secrets:
 pnpm deploy
 ```
 

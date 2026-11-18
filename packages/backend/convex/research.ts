@@ -4,7 +4,7 @@ import { generate } from "./slideAgent";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { action, internalAction, mutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/core";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const request = mutation({
   args: { presentationId: v.id("presentations"), prompt: v.string(), url: v.optional(v.string()), locale: localeValidator },

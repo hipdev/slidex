@@ -1,7 +1,7 @@
 import { localeValidator, languageName } from "./language";
 import { limits } from "./limits";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/core";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query } from "./_generated/server";
 import { requireOwner, requireSlide } from "./presentations";
 import schema from "./schema";

@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
-import { getAuthUserId } from "@convex-dev/auth/core";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 const emoji = v.union(v.literal("fire"), v.literal("mind"), v.literal("heart"), v.literal("question"));
 
