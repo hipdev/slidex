@@ -12,7 +12,9 @@
     "convex:deploy": "pnpm --filter=@slidex/backend convex:deploy",
     "test": "pnpm --filter=@slidex/backend test && pnpm --filter=slidex-web test",
     "deploy:demo": "pnpm --filter=@slidex/backend deploy:demo",
-    "deploy": "pnpm --filter=@slidex/backend deploy"
+    "deploy": "pnpm --filter=@slidex/backend deploy",
+    "test:web": "pnpm --filter=slidex-web test",
+    "preview:web": "pnpm --filter=slidex-web preview"
   },
   "devDependencies": {
     "turbo": "^2.11.11"

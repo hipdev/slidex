@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
 import { LanguageProvider } from "../i18n/provider";
 
-export const metadata: Metadata = {
-  title: "Slidex — presentations that are alive",
-  description: "Realtime presentations shaped by people, research, and AI.",
-  icons: { icon: "/favicon.svg" },
-};
-
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><LanguageProvider>{children}</LanguageProvider></body></html>;
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return <html lang="en"><head>
+    <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Slidex — presentations that are alive</title>
+    <meta name="description" content="Realtime presentations shaped by people, research, and AI." />
+    <link rel="icon" href="/favicon.svg" />
+  </head><body><LanguageProvider>{children}</LanguageProvider></body></html>;
 }

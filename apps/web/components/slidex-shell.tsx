@@ -7,8 +7,9 @@ import { ConvexReactClient, useConvexAuth, useAction, useMutation, useQuery } fr
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { api } from "@slidex/backend/api";
 
-import dynamic from "next/dynamic";
-const LiveVisual = dynamic(() => import("./live-visual"), { ssr: false, loading: () => <p>{tr("Preparando visualización…")}</p> });
+import { lazy, Suspense } from "react";
+import { ClientOnly } from "./client-only";
+const LiveVisual = lazy(() => import("./live-visual"));
 import { LanguagePicker } from "../i18n/provider";
 import { AiCompanion, QuickGuide } from "./ai-companion";
 import { SlideEditor } from "./slide-editor";
@@ -19,7 +20,7 @@ import { VoiceControls, MomentCard } from "./voice-controls";
 import { InterventionsPanel, InterventionCue } from "./interventions-panel";
 import { RoomPanel, ClosingWall } from "./room-panel";
 
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+const convexUrl = import.meta.env.VITE_CONVEX_URL;
 
 export function SlidexShell() {
   useTranslation();
@@ -30,7 +31,7 @@ export function SlidexShell() {
 
 function SetupNotice() {
   useTranslation();
-  return <main className="setup"><div className="setup-card"><span className="eyebrow">{tr("SLIDEX / LIVE SYSTEM")}</span><h1>{tr("Presentations should be alive.")}</h1><p>{tr("Convex is not connected yet. Run")} <code>pnpm convex:dev</code> {tr("inside this repository and copy the generated")} <code>NEXT_PUBLIC_CONVEX_URL</code> {tr("into")} <code>apps/web/.env.local</code>.</p><p className="muted">{tr("The UI is static-export ready; its realtime room activates as soon as the public Convex URL exists.")}</p></div></main>;
+  return <main className="setup"><div className="setup-card"><span className="eyebrow">{tr("SLIDEX / LIVE SYSTEM")}</span><h1>{tr("Presentations should be alive.")}</h1><p>{tr("Convex is not connected yet. Run")} <code>pnpm convex:dev</code> {tr("inside this repository and copy the generated")} <code>VITE_CONVEX_URL</code> {tr("into")} <code>apps/web/.env.local</code>.</p><p className="muted">{tr("The UI is static-export ready; its realtime room activates as soon as the public Convex URL exists.")}</p></div></main>;
 }
 
 function Slidex() {
@@ -155,7 +156,7 @@ function Slidex() {
         <div className="stage-meta"><span>{tr("SLIDE")} {String((current?.order ?? 0) + 1).padStart(2, "0")}</span><span>{current?.kind === "research" ? tr("✦ RESEARCH AGENT") : tr("● LIVE CANVAS")}</span></div>
         {data.presentation.showConclusions ? <ClosingWall presentationId={data.presentation._id} /> : <><div className="slide-copy" key={current?._id}><p className="accent-label">{current?.kind === "poll" ? tr("AUDIENCE TAKEOVER") : current?.kind === "research" ? tr("FRESHLY GENERATED") : tr("A REALTIME PRESENTATION SYSTEM")}</p><h1>{current?.title}</h1><p>{current?.body}</p></div>
         {current?.imageUrl && <figure className="slide-image"><img src={current.imageUrl} alt="Related visual" referrerPolicy="no-referrer" />{current.imageSourceUrl && <figcaption><a href={current.imageSourceUrl} target="_blank" rel="noreferrer">Image source ↗</a></figcaption>}</figure>}
-        {current?.visual && <LiveVisual presentationId={data.presentation._id} visual={current.visual} reactions={reactions} />}
+        {current?.visual && <ClientOnly fallback={<p>{tr("Preparando visualización…")}</p>}><Suspense fallback={<p>{tr("Preparando visualización…")}</p>}><LiveVisual presentationId={data.presentation._id} visual={current.visual} reactions={reactions} /></Suspense></ClientOnly>}
         {isPoll && <div className="poll-results">{current.choices?.map((choice) => { const value = votes[choice.id] ?? 0; const pct = totalVotes ? Math.round(value / totalVotes * 100) : 0; return <button key={choice.id} onClick={() => void vote({ presentationId: data.presentation._id, slideId: current._id, choiceId: choice.id }).catch(error => setNotice(friendlyError(error)))}><span>{choice.label}</span><strong>{pct}%</strong><i style={{ width: `${Math.max(pct, 2)}%` }} /></button>; })}<small>{totalVotes} {tr("live votes")}</small></div>}
         </>}<div className="reaction-strip">{([ ["fire", "🔥"], ["mind", "🤯"], ["heart", "♥"], ["question", "?" ]] as const).map(([key, icon]) => <button key={key} onClick={() => current && void react({ presentationId: data.presentation._id, slideId: current._id, emoji: key }).catch(error => setNotice(friendlyError(error)))}><span>{icon}</span><b>{reactions[key] ?? 0}</b></button>)}</div>
         {current?.sourceUrls?.length ? <div className="source-links">{current.sourceUrls.map((url,index) => /^https?:\/\//i.test(url) && <a href={url} key={url} target="_blank" rel="noreferrer">{tr("Fuente")} {index+1} ↗</a>)}</div> : null}

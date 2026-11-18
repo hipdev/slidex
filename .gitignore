@@ -7,3 +7,6 @@ out
 apps/web/.env.local
 
 *.tsbuildinfo
+
+dist
+.vite

@@ -6,7 +6,7 @@
       "dom.iterable",
       "es2022"
     ],
-    "allowJs": false,
+    "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
@@ -17,11 +17,6 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
       "@/*": [
         "./*"
@@ -29,13 +24,14 @@
     }
   },
   "include": [
-    "next-env.d.ts",
+    "vite-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    "scripts/*.mjs"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist",
+    "out"
   ]
 }

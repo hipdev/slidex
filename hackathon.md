@@ -14,7 +14,7 @@ Public working demo on the configured development deployment. Production remains
 
 ## Stack
 
-- Next.js + React + TypeScript, static export.
+- Rebask 0.5 + Vite + React + TypeScript, static export on Convex. Migrated from Next.js on November 18, 2026; older validation entries below describe their original framework.
 - Convex database, indexed queries, transactional mutations, anonymous Auth, scheduled actions.
 - Convex components: Agent, Rate Limiter, Static Hosting.
 - OpenAI through the AI SDK / Convex AI Gateway, with direct-key support.

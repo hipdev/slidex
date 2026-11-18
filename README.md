@@ -27,7 +27,7 @@ An anonymous host identity belongs to that browser. Keep the room URL and use th
 | Idea constellation | Lazy-loaded Three.js creates one sphere per contribution, sized by its endorsements. Includes a text fallback for WebGL failures. |
 | Audience pulse | D3 scales render a chart from real reactions to the current slide. |
 | Email to slide | AgentMail creates a per-room inbox, lists/fetches received mail, and passes a host-selected message to OpenAI. Original emails are visible only to the host. |
-| Static hosting | Convex Static Hosting serves the Next.js export while preserving root auth and webhook routes. |
+| Static hosting | Convex Static Hosting serves the Rebask static export; webhook endpoints remain in Convex. |
 
 ## Voice commands
 
@@ -50,7 +50,7 @@ pnpm convex:dev
 pnpm dev:web
 ```
 
-The frontend reads `NEXT_PUBLIC_CONVEX_URL` from `apps/web/.env.local`. In this workspace that file is a local symlink to `packages/backend/.env.local`; neither file is committed. Backend code is in `packages/backend/convex`, and UI code in `apps/web`.
+The frontend uses Rebask 0.5 + Vite + React 19 and reads public `VITE_CONVEX_URL` from `apps/web/.env.local` (`NEXT_PUBLIC_CONVEX_URL` remains a temporary compatibility alias). In this workspace that file is a local symlink to `packages/backend/.env.local`; neither file is committed. Backend code is in `packages/backend/convex`, and UI code in `apps/web`.
 
 ```sh
 pnpm typecheck
@@ -60,6 +60,16 @@ pnpm --filter=@slidex/backend exec convex dev --once
 ```
 
 Tests cover independent host/guest identities, cross-room references, invalid votes, endorsement toggling, idempotent moderation, closing selection, voice opt-in, AgentMail signature verification, malformed payloads and replay deduplication.
+
+## Frontend framework
+
+Next.js has been replaced by Rebask, using the versions and development practices verified in sibling project Conjuntify. Slidex retains its static Convex hosting and browser-based Auth 2.0 sessions. WebGL visualizations remain lazy-loaded.
+
+- [Rebask usage, architecture and practices](docs/agents/rebask.md)
+- [Local setup, preview and publishing](docs/agents/local-development.md)
+- [Migration decisions and validation](docs/migrations/rebask-validation.md)
+
+`pnpm preview:web` serves the actual static export after `pnpm build`. Development uses Vite at `http://127.0.0.1:3000`.
 
 ## Authentication
 
@@ -104,7 +114,7 @@ pnpm deploy:demo
 pnpm deploy
 ```
 
-`deploy:demo` uploads `apps/web/out` atomically to the configured development deployment. The build wrapper maps the hosting CLI's deployment URL to `NEXT_PUBLIC_CONVEX_URL`; local builds still read `.env.local`. Auth and webhook URLs stay at the root.
+`deploy:demo` uploads `apps/web/out` atomically to the configured development deployment. The Rebask/Vite build reads the hosting CLI's public `VITE_CONVEX_URL`; local builds read `.env.local`. Only full static pages and client assets enter `out/`; private RSC/SSR artifacts remain under `dist/`. Auth stays in Convex and webhook URLs stay at the root.
 
 ## Current boundaries
 
