@@ -17,6 +17,6 @@
     "preview:web": "pnpm --filter=slidex-web preview"
   },
   "devDependencies": {
-    "turbo": "^2.11.11"
+    "turbo": "^2.11.13"
   }
 }

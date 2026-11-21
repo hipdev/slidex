@@ -39,6 +39,13 @@ test("OTP upgrades the guest in place, preserves presentations, and supports ref
   expect(result.status).toBe("complete"); if (result.status !== "complete") throw new Error("OTP failed");
   expect(result.tokens.userId).toBe(guestTokens.userId);
   const account = t.withIdentity(sessionIdentity(result.tokens));
+  expect(await guest.query(api.auth.isAuthenticated, {})).toBe(true);
+  expect(result.handoffId).toBeDefined();
+  expect(await guest.query(api.auth.sessionHandoffReady, { handoffId: result.handoffId! })).toBe(false);
+  await expect(guest.mutation(api.auth.completeSessionHandoff, { handoffId: result.handoffId! })).rejects.toThrow("INVALID_SESSION_HANDOFF");
+  expect(await account.query(api.auth.sessionHandoffReady, { handoffId: result.handoffId! })).toBe(true);
+  await account.mutation(api.auth.completeSessionHandoff, { handoffId: result.handoffId! });
+  expect(await account.query(api.auth.isAuthenticated, {})).toBe(true);
   expect(await account.query(api.users.me, {})).toMatchObject({ email: "host@example.com", isAnonymous: false, emailVerificationTime: expect.any(Number) });
   expect(await account.query(api.presentations.listMine, {})).toEqual([expect.objectContaining({ slug: room.slug })]);
   expect(await guest.query(api.users.me, {})).toBeNull();
@@ -65,6 +72,13 @@ test("an existing password-era account keeps its identity and receives the verif
   if (result.status !== "complete") throw new Error("Expected OTP session");
   expect(result.tokens.userId).toBe(existingId);
   const account = t.withIdentity(sessionIdentity(result.tokens));
+  expect(await guest.query(api.auth.isAuthenticated, {})).toBe(true);
+  expect(result.handoffId).toBeDefined();
+  expect(await guest.query(api.auth.sessionHandoffReady, { handoffId: result.handoffId! })).toBe(false);
+  await expect(guest.mutation(api.auth.completeSessionHandoff, { handoffId: result.handoffId! })).rejects.toThrow("INVALID_SESSION_HANDOFF");
+  expect(await account.query(api.auth.sessionHandoffReady, { handoffId: result.handoffId! })).toBe(true);
+  await account.mutation(api.auth.completeSessionHandoff, { handoffId: result.handoffId! });
+  expect(await account.query(api.auth.isAuthenticated, {})).toBe(true);
   expect(await account.query(api.users.me, {})).toMatchObject({ createdAt: 123, email: "existing@example.com", emailVerificationTime: expect.any(Number) });
   expect((await account.query(api.presentations.listMine, {})).map(room => room.slug).sort()).toEqual(["LIVE-OLD00", room.slug].sort());
   expect((await account.query(api.presentations.getBySlug, { slug: room.slug }))!.isHost).toBe(true);
@@ -162,4 +176,25 @@ test("large guest histories merge in bounded batches without transferring anyone
   expect(await t.run(ctx => ctx.db.query("presentations").withIndex("by_ownerId", q => q.eq("ownerId", targetId)).take(104))).toHaveLength(103);
   expect((await other.query(api.presentations.getBySlug, { slug: otherRoom.slug }))!.isHost).toBe(true);
   await expect(t.mutation(internal.users.moveGuestPresentations, { guestId: otherTokens.userId as typeof targetId, targetId })).rejects.toThrow("INVALID_ACCOUNT_MERGE");
+});
+
+
+test("abandoned OTP handoffs expire without revoking the replacement session", async () => {
+  const { t, code } = fixture();
+  const guest = t.withIdentity(sessionIdentity(await t.mutation(api.auth.signInAnonymous, {})));
+  await guest.mutation(api.authOtp.request, { email: "handoff@example.com" });
+  const result = await guest.mutation(api.auth.signInWithEmailOtp, { email: "handoff@example.com", code: code() });
+  if (result.status !== "complete" || !result.handoffId) throw new Error("Expected handoff");
+  const account = t.withIdentity(sessionIdentity(result.tokens));
+  const args = { handoffId: result.handoffId };
+  await t.mutation(internal.auth.expireSessionHandoff, args);
+  expect(await guest.query(api.auth.isAuthenticated, {})).toBe(true);
+  const now = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_001);
+  try { await t.mutation(internal.auth.expireSessionHandoff, args); }
+  finally { now.mockRestore(); }
+  expect(await guest.query(api.auth.isAuthenticated, {})).toBe(false);
+  expect(await account.query(api.auth.isAuthenticated, {})).toBe(true);
+  // Completion and scheduled cleanup are both safe to retry after deletion.
+  await account.mutation(api.auth.completeSessionHandoff, args);
+  await t.mutation(internal.auth.expireSessionHandoff, args);
 });

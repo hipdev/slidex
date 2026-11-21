@@ -24,6 +24,9 @@ export default defineSchema({
     createdAt: v.optional(v.number()),
     mergedInto: v.optional(v.id("users")),
   }).index("by_email", ["email"]),
+  authSessionHandoffs: defineTable({
+    sessionId: v.string(), oldSessionIds: v.array(v.string()), expiresAt: v.number(),
+  }),
   emailOtpChallenges: defineTable({
     email: v.string(), nonce: v.string(), digest: v.string(), attempts: v.number(),
     consumed: v.boolean(), expiresAt: v.number(), requesterId: v.optional(v.id("users")),

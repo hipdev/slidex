@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useMutation } from "convex/react";
+import { useConvex, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@slidex/backend/api";
 import { tr, useLocale, useTranslation } from "../i18n/provider";
 import { OtpCodeInput } from "./otp-input";
+import { finishSessionHandoff } from "./session-handoff";
 import { starterText } from "../i18n/starter-copy";
 
 type Account = { email?: string; isAnonymous?: boolean } | null | undefined;
@@ -19,7 +20,8 @@ export function AccountDialog({ account, history, onClose, onSignOut }: {
   const [success, setSuccess] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState(false);
-  const signedIn = account?.isAnonymous === false;
+  const [verifying, setVerifying] = useState(false);
+  const signedIn = account?.isAnonymous === false && !verifying;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const modal = dialog.current;
@@ -32,7 +34,7 @@ export function AccountDialog({ account, history, onClose, onSignOut }: {
       <button className="dialog-close" aria-label={tr("Cerrar cuenta")} onClick={onClose}>×</button>
       <p className="eyebrow">{tr("TU CUENTA SLIDEX")}</p>
       <h2 id="account-title">{tr(signedIn ? "Tus presentaciones" : "Guarda tus presentaciones")}</h2>
-      {signedIn ? <><p className="account-intro">{tr("Sesión iniciada como {{email}}.", { email: account?.email ?? "" })}</p>{success && <p className="otp-success" role="status">{tr("Correo verificado. Tus presentaciones están guardadas.")}</p>}</> : <><p className="account-intro">{tr("Tu trabajo está en una sesión invitada. Verifica tu correo para conservarlo y volver desde cualquier dispositivo.")}</p><ConnectedEmailOtpForm onAuthenticated={() => setSuccess(true)} /></>}
+      {signedIn ? <><p className="account-intro">{tr("Sesión iniciada como {{email}}.", { email: account?.email ?? "" })}</p>{success && <p className="otp-success" role="status">{tr("Correo verificado. Tus presentaciones están guardadas.")}</p>}</> : <><p className="account-intro">{tr("Tu trabajo está en una sesión invitada. Verifica tu correo para conservarlo y volver desde cualquier dispositivo.")}</p><ConnectedEmailOtpForm onAuthenticated={() => setSuccess(true)} onVerifying={setVerifying} /></>}
       {history && <div className="presentation-history"><h3>{tr("Historial de presentaciones")}</h3>{history.length ? history.map(item => <a key={item.slug} href={`/?room=${item.slug}`}><span>{starterText(item.title)}</span><small>{tr(item.status === "live" ? "En vivo" : item.status === "ended" ? "Finalizada" : "Borrador")} · {new Date(item.createdAt).toLocaleDateString()}</small></a>) : <p>{tr("Todavía no hay presentaciones.")}</p>}</div>}
       {signedIn && <button className="account-signout" disabled={signingOut} onClick={async () => {
         setSigningOut(true); setSignOutError(false);
@@ -43,7 +45,8 @@ export function AccountDialog({ account, history, onClose, onSignOut }: {
   </dialog>;
 }
 
-function ConnectedEmailOtpForm({ onAuthenticated }: { onAuthenticated: () => void }) {
+function ConnectedEmailOtpForm({ onAuthenticated, onVerifying }: { onAuthenticated: () => void; onVerifying: (value: boolean) => void }) {
+  const client = useConvex();
   const request = useMutation(api.authOtp.request);
   // Use the authenticated browser client so the server can preserve guest ownership.
   const verifyCode = useMutation(api.auth.signInWithEmailOtp);
@@ -52,10 +55,14 @@ function ConnectedEmailOtpForm({ onAuthenticated }: { onAuthenticated: () => voi
   return <EmailOtpForm onAuthenticated={onAuthenticated}
     requestCode={async email => { await request({ email, locale }); }}
     checkCode={async (email, code) => {
-      const result = await verifyCode({ email, code });
-      if (result.status !== "complete") return false;
-      await setSession(result.tokens);
-      return true;
+      onVerifying(true);
+      try {
+        const result = await verifyCode({ email, code });
+        if (result.status !== "complete") return false;
+        await setSession(result.tokens);
+        if (result.handoffId) await finishSessionHandoff(client, result.handoffId);
+        return true;
+      } finally { onVerifying(false); }
     }}
   />;
 }

@@ -63,7 +63,7 @@ sus enlaces y códigos antiguos siguen resolviendo la misma presentación.
 
 ## Acceso por correo OTP
 
-Slidex conserva Convex Auth **2.0.0**, sesiones en el navegador e invitados. El
+Slidex conserva Convex Auth **2.1.0**, sesiones en el navegador e invitados. El
 único acceso con correo es OTP: `authOtp.request` encola un código con el componente
 Resend y `auth.signInWithEmailOtp` lo verifica y entrega la sesión a `setSession`.
 No hay endpoints de usuario/contraseña, recuperación de contraseña ni cookies SSR.
@@ -85,8 +85,15 @@ revierte el desafío y los límites consumidos.
 Un correo nuevo convierte al invitado en cuenta verificada **sin cambiar su ID**.
 Para un correo que ya tiene cuenta, las presentaciones del invitado se trasladan
 a esa identidad existente en lotes de 100. Solo ocurre tras verificar el código.
-Las sesiones invitadas anteriores se revocan y el core mantiene renovación y
-cierre de las sesiones OTP. Las cuentas de la etapa de contraseñas conservan sus
+La sesión invitada se conserva hasta que `setSession` guarda el nuevo token y
+`auth.sessionHandoffReady` confirma que el WebSocket ya usa esa sesión. Solo
+entonces `auth.completeSessionHandoff` retira las sesiones invitadas anteriores.
+El relevo se vincula a la sesión emitida por el servidor, no a un ID del cliente;
+si se abandona, una tarea retira las credenciales antiguas al cabo de un minuto.
+El diálogo de cuenta permanece montado durante la reconexión, con el código y
+el estado de verificación intactos. Esto evita que el observador de revocación
+cierre la sesión nueva y que el arranque anónimo la reemplace por otro invitado.
+El core mantiene la renovación y el cierre de las sesiones OTP. Las cuentas de la etapa de contraseñas conservan sus
 usuarios e historial y acceden ahora mediante el código enviado a su correo.
 
 Las pruebas de Auth usan una base aislada y simulan la cola de Resend: no mandan

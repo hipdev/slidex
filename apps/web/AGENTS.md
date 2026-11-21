@@ -1,6 +1,6 @@
 # Frontend Slidex
 
-Uses Rebask 0.5.0, Vite 8.3.8 and React 19. Routes live in `app/`; shared
+Uses Rebask 0.6.0, Vite 8.3.8 and React 19. Routes live in `app/`; shared
 components live in `components/`. Next.js has been removed.
 
 Read [Rebask usage and practices](../../docs/agents/rebask.md) before changing

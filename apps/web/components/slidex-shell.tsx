@@ -69,6 +69,7 @@ function Slidex() {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut, setSession } = useAuthActions();
   const createGuest = useMutation(api.auth.signInAnonymous);
+  const guestSignInPending = useRef(false);
   const account = useQuery(api.users.me, isAuthenticated ? {} : "skip");
   const history = useQuery(api.presentations.listMine, isAuthenticated ? {} : "skip");
   const data = useQuery(api.presentations.getBySlug, slug ? { slug } : "skip");
@@ -100,7 +101,11 @@ function Slidex() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) void createGuest().then(setSession).catch(error => setNotice(friendlyError(error)));
+    if (!isLoading && !isAuthenticated && !guestSignInPending.current) {
+      guestSignInPending.current = true;
+      void createGuest().then(setSession).catch(error => setNotice(friendlyError(error)))
+        .finally(() => { guestSignInPending.current = false; });
+    }
   }, [isAuthenticated, isLoading, createGuest, setSession]);
 
   useEffect(() => {
@@ -111,10 +116,11 @@ function Slidex() {
     try { const room = await createDemo({ ownerName: tr("Presentador"), locale }); window.location.assign(`?room=${room.slug}`); } catch(error) { setNotice(friendlyError(error)); }
   };
 
-  if (isLoading || !isAuthenticated) return <main className="setup"><p className="eyebrow">{tr("CONVEX AUTH")}</p><h1>{tr("Preparando tu entrada…")}</h1>{notice && <p role="alert">{notice}</p>}</main>;
-  if (!slug) return <><Launchpad onCreate={createRoom} notice={notice} account={account} history={history} onAccount={() => setAccountOpen(true)} />{accountOpen && <AccountDialog account={account} history={history} onClose={() => setAccountOpen(false)} onSignOut={signOut} />}</>;
-  if (data === undefined) return <main className="setup"><p className="eyebrow">{tr("CONNECTING TO")} {slug}</p><h1>{tr("Waking the room…")}</h1></main>;
-  if (data === null) return <main className="setup"><div className="setup-card"><span className="eyebrow">{tr("ROOM NOT FOUND")}</span><h1>{slug} {tr("is not live.")}</h1><button onClick={() => setSlug(null)}>{tr("Create a new live room")}</button></div></main>;
+  const accountDialog = accountOpen ? <AccountDialog account={account} history={history} onClose={() => setAccountOpen(false)} onSignOut={signOut} /> : null;
+  if (isLoading || !isAuthenticated) return <><main className="setup"><p className="eyebrow">{tr("CONVEX AUTH")}</p><h1>{tr("Preparando tu entrada…")}</h1>{notice && <p role="alert">{notice}</p>}</main>{accountDialog}</>;
+  if (!slug) return <><Launchpad onCreate={createRoom} notice={notice} account={account} history={history} onAccount={() => setAccountOpen(true)} />{accountDialog}</>;
+  if (data === undefined) return <><main className="setup"><p className="eyebrow">{tr("CONNECTING TO")} {slug}</p><h1>{tr("Waking the room…")}</h1></main>{accountDialog}</>;
+  if (data === null) return <><main className="setup"><div className="setup-card"><span className="eyebrow">{tr("ROOM NOT FOUND")}</span><h1>{slug} {tr("is not live.")}</h1><button onClick={() => setSlug(null)}>{tr("Create a new live room")}</button></div></main>{accountDialog}</>;
 
   const current = data.slides.find((slide) => slide._id === data.presentation.currentSlideId) ?? data.slides[0];
   const reactions = countBy(data.reactions.filter((reaction) => reaction.slideId === current?._id), "emoji");
@@ -143,7 +149,7 @@ function Slidex() {
     setPresenting(false); setPanel("agent");
     window.setTimeout(() => { const editor = document.getElementById("slide-editor") as HTMLDetailsElement | null; if (editor) { editor.open = true; editor.scrollIntoView({ behavior: "smooth", block: "center" }); document.getElementById("slide-title")?.focus({ preventScroll: true }); } }, 0);
   };
-  return <main className={`app-shell ${presenting ? "presentation-mode" : ""} ${data.isHost ? "host-view" : "audience-view"}`}>
+  return <><main className={`app-shell ${presenting ? "presentation-mode" : ""} ${data.isHost ? "host-view" : "audience-view"}`}>
     <header className="topbar">
       <div className="header-identity"><a href="/" className="logo">SLID<span>EX</span></a><div className="header-room"><strong title={starterText(data.presentation.title)}>{starterText(data.presentation.title)}</strong><span><i />{shareCode} · {tr("participantCount", { count: data.participantCount })}</span></div></div>
       <div className="top-actions">
@@ -156,7 +162,6 @@ function Slidex() {
     </header>
     {data.isHost && <JDVoice key={data.presentation._id} presentationId={data.presentation._id} cue={data.presentation.jdCue} />}
     {!data.isHost && <JDCharacter key={data.presentation._id} cue={data.presentation.jdCue} audience />}
-    {accountOpen && <AccountDialog account={account} history={history} onClose={() => setAccountOpen(false)} onSignOut={signOut} />}
     {data.isHost && !presenting && current && <InterventionCue slideId={current._id} onReview={() => { setPresenting(false); setPanel("twists"); }} />}
     {copyNotice && <div className="copy-toast" role="status"><span>✓ {tr("Enlace copiado; compártelo para invitar a la sala")}</span><button aria-label={tr("Cerrar aviso")} onClick={() => setCopyNotice(false)}>×</button></div>}
     {notice && <div className="notice" role="status">{notice}<button aria-label={tr("Cerrar aviso")} onClick={() => setNotice("")}>×</button></div>}
@@ -190,7 +195,7 @@ function Slidex() {
       </BookStage>
       <aside className="agent-panel" id="participation"><div className="studio-tabs" role="tablist" aria-label={tr("Herramientas de la sala")}>{(data.isHost ? ["agent", "room", "twists"] : ["room", "twists"]).map(tab => <button key={tab} role="tab" id={`studio-tab-${tab}`} aria-controls="studio-workspace" tabIndex={(data.isHost ? panel : panel === "agent" ? "room" : panel) === tab ? 0 : -1} onKeyDown={event => { const tabs = data.isHost ? ["agent", "room", "twists"] : ["room", "twists"]; const index = tabs.indexOf(tab); const next = event.key === "ArrowRight" ? (index + 1) % tabs.length : event.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : -1; if (next >= 0) { event.preventDefault(); setPanel(tabs[next] as typeof panel); (event.currentTarget.parentElement?.querySelectorAll("button")[next] as HTMLButtonElement)?.focus(); } }} aria-selected={(data.isHost ? panel : panel === "agent" ? "room" : panel) === tab} onClick={() => setPanel(tab as "agent" | "room" | "twists")}>{tr(tab === "agent" ? "✦ Crear" : tab === "room" ? "◉ La sala" : "↯ Giros")}</button>)}</div><div className="workspace-panel" id="studio-workspace" role="tabpanel" aria-labelledby={`studio-tab-${data.isHost ? panel : panel === "agent" ? "room" : panel}`}><QuickGuide isHost={data.isHost} />{current && <div hidden={panel !== "twists"} id="live-interventions"><InterventionsPanel key={current._id} presentationId={data.presentation._id} slideId={current._id} isHost={data.isHost} report={setNotice} /></div>}{current && <div hidden={data.isHost ? panel !== "room" : panel === "twists"}><RoomPanel presentationId={data.presentation._id} slideId={current._id} isHost={data.isHost} showConclusions={!!data.presentation.showConclusions} report={setNotice} /></div>}{data.isHost && <div hidden={panel !== "agent"}>{current && <AiCompanion operations={data.operations} slideId={current._id} onReviewTwist={() => setPanel("twists")} onOpenLatest={data.slides.some(s => s.generatedAt) ? () => { const slide = [...data.slides].reverse().find(s => s.generatedAt); if (slide) void setCurrentSlide({ presentationId: data.presentation._id, slideId: slide._id }).catch(error => setNotice(friendlyError(error))); } : undefined} onPrompt={value => { setResearchPrompt(value); document.getElementById("research-prompt")?.focus(); }} />}{data.isHost && <form className="creation-form" onSubmit={async (event) => { event.preventDefault(); if (!researchPrompt.trim() || researchBusy) return; setResearchBusy(true); try { await requestResearch({ presentationId: data.presentation._id, prompt: researchPrompt, url: researchUrl || undefined, locale }); setResearchPrompt(""); setResearchUrl(""); } catch(error) { setNotice(friendlyError(error)); } finally { setResearchBusy(false); } }}><label htmlFor="research-prompt">{tr("Investigar un tema")}</label><textarea id="research-prompt" rows={3} maxLength={500} value={researchPrompt} onChange={(event) => setResearchPrompt(event.target.value)} placeholder={tr("Una idea para explorar…")} /><label htmlFor="research-url">{tr("Fuente web (opcional)")}</label><input id="research-url" type="url" value={researchUrl} onChange={(event) => setResearchUrl(event.target.value)} placeholder={tr("https://fuente.com/artículo")} /><button className="primary" type="submit" disabled={researchBusy || !researchPrompt.trim()}>{researchBusy ? tr("Enviando…") : tr("Investigar y crear slide ↗")}</button></form>}{data.isHost && current && <SlideEditor key={`${current._id}:${current.title}:${current.body}:${editorRequest.version}`} initialFresh={editorRequest.fresh} onSaved={() => setEditorRequest(value => ({ ...value, fresh: false }))} slide={current} report={setNotice} />}{data.isHost && <VoiceControls active={panel === "agent" && !presenting} room={data.presentation} slides={data.slides} report={setNotice} />}<details className="activity-history"><summary>{tr("Actividad reciente")}</summary><div className="agent-head"><div className="orb">✦</div><div><strong>{tr("Slide Agent")}</strong><small>{tr("Investiga y crea en vivo")}</small></div></div><div className="agent-log">{data.operations.length ? data.operations.map((operation) => <div key={operation._id} className={`log ${operation.status}`}><span>{operation.status === "complete" ? "✦" : operation.status === "failed" ? "!" : "◌"}</span><p><b>{tr(`operation.${operation.kind}`)} · {tr(`status.${operation.status}`)}</b><br />{operation.output ?? (operation.error ? friendlyError(operation.error) : operation.input)}</p></div>) : <p className="empty">{tr("Pide un tema y consulta fuentes reales sin salir de tu presentación.")}</p>}</div></details><div className="inbox"><span>{tr("AGENTMAIL / IDEAS POR CORREO")}</span>{data.isHost ? <><p className="panel-hint">{tr("El correo entra a tu sala. Tú eliges qué se convierte en slide.")}</p>{data.presentation.agentInboxAddress ? <><a className="inbox-address" href={`mailto:${data.presentation.agentInboxAddress}`}>{data.presentation.agentInboxAddress}</a><button className="secondary" disabled={inboxBusy} onClick={async () => { setInboxBusy(true); try { const count = await syncInbox({ presentationId: data.presentation._id }); setNotice(tr("Correos revisados", { count })); } catch(error) { setNotice(friendlyError(error)); } finally { setInboxBusy(false); } }}>{inboxBusy ? tr("Consultando…") : tr("Consultar correos")}</button></> : <button className="secondary" disabled={inboxBusy} onClick={async () => { setInboxBusy(true); try { await connectInbox({ presentationId: data.presentation._id }); setNotice(tr("Buzón de la presentación activado")); } catch(error) { setNotice(friendlyError(error)); } finally { setInboxBusy(false); } }}>{inboxBusy ? tr("Creando buzón…") : tr("Activar buzón de esta sala")}</button>}{data.inbox.map(item => <article className="inbox-item" key={item._id}><b>{item.subject}</b><small>{item.sender}</small><p>{item.text.slice(0,180)}</p><button className="secondary" disabled={item.status === "processed"} onClick={() => void emailToSlide({ inboxItemId: item._id, locale }).catch(error => setNotice(friendlyError(error)))}>{item.status === "processed" ? tr("Enviado al copiloto") : tr("Convertir en slide ↗")}</button></article>)}</> : <p className="empty">{tr("El presentador revisa los correos antes de llevarlos al escenario.")}</p>}</div></div>}</div></aside>
     </section>
-  </main>;
+  </main>{accountDialog}</>;
 }
 
 function Launchpad({ onCreate, notice, account, history, onAccount }: { onCreate: () => Promise<void>; notice: string; account: { isAnonymous?: boolean } | null | undefined; history: { title: string; slug: string }[] | undefined; onAccount: () => void }) {

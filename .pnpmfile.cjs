@@ -4,7 +4,7 @@
 module.exports = {
   hooks: {
     readPackage(pkg) {
-      if (pkg.name === "@convex-dev/auth" && pkg.version === "2.0.0") {
+      if (pkg.name === "@convex-dev/auth" && ["2.0.0", "2.1.0"].includes(pkg.version)) {
         delete pkg.peerDependencies?.next
         delete pkg.peerDependenciesMeta?.next
       }

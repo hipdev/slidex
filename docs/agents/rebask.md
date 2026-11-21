@@ -1,6 +1,6 @@
 # Rebask en Slidex
 
-Slidex usa **Rebask 0.5.0**, React 19, Vite 8.3.8, `@vitejs/plugin-react` 6.3.0 y
+Slidex usa **Rebask 0.6.0**, React 19, Vite 8.3.8, `@vitejs/plugin-react` 6.3.0 y
 `@vitejs/plugin-rsc` 0.5.39. Las rutas siguen en `apps/web/app`; los componentes
 compartidos están en `apps/web/components`.
 
@@ -37,7 +37,7 @@ prácticas y el pequeño adaptador estático tengan un contrato verificable.
 ## Providers, datos y límites de carga
 
 Conserva la sesión y los providers en un árbol estable. La integración actual de
-Auth 2.0 es de cliente, igual que antes de la migración. Se mantienen invitados,
+Auth 2.1 es de cliente, igual que antes de la migración. Se mantienen invitados,
 acceso por OTP al correo con Resend, renovación, revocación y conversión del invitado
 sin perder su usuario ni sus presentaciones. No hay cookies SSR/httpOnly ni
 sesiones de Conjuntify copiadas a este proyecto.
@@ -86,9 +86,9 @@ estar en `include` antes de comprobar navegación en frío y después de HMR.
 Core se mantiene fuera del prebundle mediante su exclusión nativa. No fuerces
 condiciones `react-server` en todo el proyecto ni compartas el grafo del cliente
 con RSC. No se necesita el parche del adapter Cloudflare de Conjuntify: Slidex no
-usa ese adapter y Core 0.5.0 se instala sin parches.
+usa ese adapter y Core 0.6.0 se instala sin parches.
 
-`.pnpmfile.cjs` elimina únicamente el peer opcional `next` de Auth **2.0.0**,
+`.pnpmfile.cjs` elimina únicamente el peer opcional `next` de Auth **2.0.0 y 2.1.0**,
 igual que Conjuntify. No altera el runtime de Auth ni sus dependencias. Revisa ese
 hook al actualizar Auth; no amplíes la excepción a otras versiones sin probarlas.
 

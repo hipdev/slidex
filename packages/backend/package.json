@@ -24,22 +24,22 @@
     "@ai-sdk/openai": "^4.0.121",
     "@convex-dev/agent": "^0.7.10",
     "@convex-dev/ai-sdk-provider": "^0.3.0",
-    "@convex-dev/auth": "2.0.0",
+    "@convex-dev/auth": "2.1.0",
     "@convex-dev/rate-limiter": "^0.4.3",
     "@convex-dev/resend": "0.2.10",
     "@convex-dev/static-hosting": "^0.2.2",
-    "ai": "^7.0.176",
-    "convex": "^1.50.0",
+    "ai": "^7.0.177",
+    "convex": "^1.51.0",
     "svix": "^2.10.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
     "@types/node": "^26.6.6",
-    "convex-test": "^0.0.72",
+    "convex-test": "^0.0.73",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "type": "module"
 }
