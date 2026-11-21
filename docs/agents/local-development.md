@@ -90,6 +90,13 @@ La sesión invitada se conserva hasta que `setSession` guarda el nuevo token y
 entonces `auth.completeSessionHandoff` retira las sesiones invitadas anteriores.
 El relevo se vincula a la sesión emitida por el servidor, no a un ID del cliente;
 si se abandona, una tarea retira las credenciales antiguas al cabo de un minuto.
+El parche reproducible `patches/@convex-dev__auth@2.1.0.patch` también hace
+que el bridge React de Auth vuelva a autenticar Convex cuando cambia el `sub`
+de la sesión. Un booleano `isAuthenticated: true` no distingue un invitado de
+la sesión OTP que lo reemplaza. La clave solo invalida el contexto del cliente;
+Convex sigue verificando el JWT. La renovación de tokens de la misma sesión no
+reinicia el bridge ni crea un bucle de refresh. `scripts/auth-provider.test.mjs`
+comprueba ambos casos con el provider real y un transporte sin red.
 El diálogo de cuenta permanece montado durante la reconexión, con el código y
 el estado de verificación intactos. Esto evita que el observador de revocación
 cierre la sesión nueva y que el arranque anónimo la reemplace por otro invitado.

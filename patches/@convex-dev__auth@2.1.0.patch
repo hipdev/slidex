@@ -1,0 +1,67 @@
+diff --git a/dist/react/client.js b/dist/react/client.js
+index 9f99dfabdaae556d4339b528c3a29e6774466971..bcad3d5c04a9a7db4ae8e5e26de9e9d685df9b67 100644
+--- a/dist/react/client.js
++++ b/dist/react/client.js
+@@ -23,6 +23,17 @@ export function useAuthSignInApi() {
+ // storage — so it always reports the loading state. It lives here rather than
+ // on the core client because server rendering is a React-specific concern.
+ const getServerSnapshot = () => INITIAL_AUTH_STATE;
++
++// Invalidation only: Convex still verifies the JWT. Its subject identifies a
++// session, unlike isAuthenticated (which stays true during guest -> OTP).
++function sessionKey(token) {
++  if (token === null) return null;
++  try {
++    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
++    return typeof payload.sub === "string" ? payload.sub : token;
++  } catch { return token; }
++}
++
+ export const ConvexAuthActionsContext = createContext(undefined);
+ /**
+  * The bound {@link AuthClient}. The sign-in methods read it through
+@@ -94,7 +105,8 @@ export function AuthProvider({ authClient, signInApi, children, }) {
+         void authClient.init();
+         return () => authClient.dispose();
+     }, [authClient]);
+-    const fetchAccessToken = useCallback((args) => authClient.fetchAccessToken(args), [authClient]);
++    const currentSessionKey = useMemo(() => sessionKey(state.token), [state.token]);
++    const fetchAccessToken = useCallback((args) => authClient.fetchAccessToken(args), [authClient, currentSessionKey]);
+     const authState = useMemo(() => ({
+         isLoading: state.isLoading,
+         isAuthenticated: state.isAuthenticated,
+diff --git a/src/react/client.tsx b/src/react/client.tsx
+index 04a1ba417cae76eafc779640608604640d372eac..e2e87d174ff64cc8400064cd43c20af78dccd707 100644
+--- a/src/react/client.tsx
++++ b/src/react/client.tsx
+@@ -50,6 +50,17 @@ export function useAuthSignInApi(): AuthSignInApi {
+ // on the core client because server rendering is a React-specific concern.
+ const getServerSnapshot = () => INITIAL_AUTH_STATE;
+ 
++// Invalidation only: Convex still verifies the JWT. Its subject identifies a
++// session, unlike isAuthenticated (which stays true during guest -> OTP).
++function sessionKey(token: string | null): string | null {
++  if (token === null) return null;
++  try {
++    const payload = JSON.parse(atob(token.split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/")));
++    return typeof payload.sub === "string" ? payload.sub : token;
++  } catch { return token; }
++}
++
++
+ /** The value exposed by {@link useAuthActions}. */
+ export type ConvexAuthActionsContextType = {
+   /**
+@@ -176,9 +187,11 @@ export function AuthProvider({
+     return () => authClient.dispose();
+   }, [authClient]);
+ 
++  const currentSessionKey = useMemo(() => sessionKey(state.token), [state.token]);
++
+   const fetchAccessToken = useCallback(
+     (args: { forceRefreshToken: boolean }) => authClient.fetchAccessToken(args),
+-    [authClient],
++    [authClient, currentSessionKey],
+   );
+ 
+   const authState = useMemo(

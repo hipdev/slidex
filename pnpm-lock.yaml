@@ -6,6 +6,9 @@ settings:
 
 pnpmfileChecksum: sha256-HxwDgtCqHmdjgymLNBQltOu5fzA3lbfMTjp3r5GPOWk=
 
+patchedDependencies:
+  '@convex-dev/auth@2.1.0': ef0ac5542629ad1cc1c17670ba7c5e4b10479a0f6453caf2fb0367137ddd1256
+
 importers:
 
   .:
@@ -18,7 +21,7 @@ importers:
     dependencies:
       '@convex-dev/auth':
         specifier: 2.1.0
-        version: 2.1.0(@convex-dev/resend@0.2.10(@standard-schema/spec@1.1.0)(convex-helpers@0.1.136(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7)
+        version: 2.1.0(patch_hash=ef0ac5542629ad1cc1c17670ba7c5e4b10479a0f6453caf2fb0367137ddd1256)(@convex-dev/resend@0.2.10(@standard-schema/spec@1.1.0)(convex-helpers@0.1.136(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7)
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -95,6 +98,9 @@ importers:
       '@vitejs/plugin-rsc':
         specifier: 0.5.39
         version: 0.5.39(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.27.0))
+      react-test-renderer:
+        specifier: 19.3.1
+        version: 19.3.1(react@19.3.1)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -115,7 +121,7 @@ importers:
         version: 0.3.0(ai@7.0.177(zod@4.6.7))(convex@1.51.0(react@19.3.1))
       '@convex-dev/auth':
         specifier: 2.1.0
-        version: 2.1.0(@convex-dev/resend@0.2.10(@standard-schema/spec@1.1.0)(convex-helpers@0.1.136(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7)
+        version: 2.1.0(patch_hash=ef0ac5542629ad1cc1c17670ba7c5e4b10479a0f6453caf2fb0367137ddd1256)(@convex-dev/resend@0.2.10(@standard-schema/spec@1.1.0)(convex-helpers@0.1.136(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7)
       '@convex-dev/rate-limiter':
         specifier: ^0.4.3
         version: 0.4.3(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7)
@@ -1338,6 +1344,14 @@ packages:
       typescript:
         optional: true
 
+  react-is@19.3.1:
+    resolution: {integrity: sha512-RRieF6IyxQBkcK6pP8xOHprLTPW6QjRkbGdImtqNme+/hYVwCZkLQLdlZGOhUqXwkS9IEynaGvPJtv6XB/cz0Q==}
+
+  react-test-renderer@19.3.1:
+    resolution: {integrity: sha512-YcNewwmnZMd0wTb2nkb4hQ58NmX/u1hW2OJsNpen8CnV+jNkmEjYd1R6wJrOMSgb8bIF5HAJv4iL+S3PwNptOA==}
+    peerDependencies:
+      react: ^19.3.1
+
   react@19.3.1:
     resolution: {integrity: sha512-QNhWdt7nrgVWWQG58QuGsAR3jv3Hbe4mb4vz7w2csnHavciZJgda1CPNaldF6eVxv90ud3jUXpKlHL69gO38yw==}
     engines: {node: '>=0.10.0'}
@@ -1654,7 +1668,7 @@ snapshots:
       convex: 1.51.0(react@19.3.1)
       zod: 4.6.7
 
-  '@convex-dev/auth@2.1.0(@convex-dev/resend@0.2.10(@standard-schema/spec@1.1.0)(convex-helpers@0.1.136(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7)':
+  '@convex-dev/auth@2.1.0(patch_hash=ef0ac5542629ad1cc1c17670ba7c5e4b10479a0f6453caf2fb0367137ddd1256)(@convex-dev/resend@0.2.10(@standard-schema/spec@1.1.0)(convex-helpers@0.1.136(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7))(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7)':
     dependencies:
       '@convex-dev/batch-worker': 0.3.6(@standard-schema/spec@1.1.0)(convex@1.51.0(react@19.3.1))(prettier@3.10.1)(react@19.3.1)(typescript@7.0.2)(zod@4.6.7)
       '@convex-dev/rate-limiter': 0.3.2(convex@1.51.0(react@19.3.1))(react@19.3.1)
@@ -2574,6 +2588,14 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.3.0
       typescript: 7.0.2
+
+  react-is@19.3.1: {}
+
+  react-test-renderer@19.3.1(react@19.3.1):
+    dependencies:
+      react: 19.3.1
+      react-is: 19.3.1
+      scheduler: 0.28.0
 
   react@19.3.1: {}
 
