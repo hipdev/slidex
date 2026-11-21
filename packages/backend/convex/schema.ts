@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-export const slideLayout = v.union(v.literal("standard"), v.literal("photo"), v.literal("reactivity"), v.literal("services"), v.literal("cache"));
+export const slideLayout = v.union(v.literal("standard"), v.literal("photo"), v.literal("reactivity"), v.literal("services"), v.literal("cache"), v.literal("pricing"));
 
 const slideKind = v.union(
   v.literal("title"),

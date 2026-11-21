@@ -196,3 +196,10 @@ test("a host can publish a caching story layout without altering the existing de
   expect(updated.slides.at(-1)).toMatchObject({_id:id,layout:"cache",kind:"content"});
   expect(updated.slides.slice(0,3)).toEqual(data.slides);
 });
+
+test("pricing slides use validated editable layout data", async () => {
+ const {host,room}=await fixture();
+ const id=await host.mutation(api.live.saveSlide,{presentationId:room.presentationId,title:"Cloud o tu infraestructura",body:"DB | 0.5 GB | 50 GB",layout:"pricing"});
+ const data=(await host.query(api.presentations.getBySlug,{slug:room.slug}))!;
+ expect(data.slides.at(-1)).toMatchObject({_id:id,layout:"pricing",body:"DB | 0.5 GB | 50 GB"});
+});

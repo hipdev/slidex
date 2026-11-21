@@ -448,5 +448,21 @@
   "Bajo el capó": "Under the hood",
   "De la experiencia en Dropbox a un motor propio.": "From experience at Dropbox to a custom engine.",
   "Read sets: validez": "Read sets: validity",
-  "LRU: libera espacio": "LRU: frees space"
+  "LRU: libera espacio": "LRU: frees space",
+  "Convex · Precios y portabilidad": "Convex · Pricing and portability",
+  "Una fila por línea: cuota | Free/Starter | Professional": "One row per line: resource | Free/Starter | Professional",
+  "CONVEX CLOUD · TU INFRAESTRUCTURA": "CONVEX CLOUD · YOUR INFRASTRUCTURE",
+  "Cuotas incluidas de Convex Cloud": "Convex Cloud included resources",
+  "Recurso": "Resource",
+  "Free: límites fijos. Starter y Pro: excedentes por uso.": "Free: hard caps. Starter and Pro: usage-based overages.",
+  "El mismo backend. En tus servidores.": "The same backend. On your servers.",
+  "Docker + backend + dashboard": "Docker + backend + dashboard",
+  "Código y datos bajo tu control": "Code and data under your control",
+  "Infraestructura y operación a tu cargo": "You manage infrastructure and operations",
+  "Cada versión pasa a Apache tras 2 años. FSL restringe ofrecer un servicio competidor.": "Each version becomes Apache after 2 years. FSL restricts offering a competing service.",
+  "Portabilidad de hosting; las APIs siguen siendo Convex.": "Hosting portability; APIs remain Convex-specific.",
+  "Cuotas por equipo · USD · US East · 21 nov 2026": "Per-team resources · USD · US East · Nov 21, 2026",
+  "Licencia": "License",
+  "Las actualizaciones de suscripción y tareas también cuentan como llamadas.": "Subscription updates and scheduled tasks also count as calls.",
+  "Fair source: Apache tras 2 años por versión. Restringe servicios comerciales competidores.": "Fair source: Apache after 2 years per version. Restricts competing commercial services."
 }

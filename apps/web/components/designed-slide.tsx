@@ -43,6 +43,16 @@ export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
     </div>
     <a className="story-source" href="https://docs.convex.dev/realtime" target="_blank" rel="noreferrer">{tr("Cómo funciona")} ↗</a>
   </div>;
+  if (slide.layout === "pricing") {
+    const rows = slide.body.split("\n").filter(line => line.trim()).slice(0,10).map(line => line.split("|").map(cell=>cell.trim()));
+    return <div className="story-pricing">
+      <div className="story-services-header"><div><span className="story-kicker">{tr("CONVEX CLOUD · TU INFRAESTRUCTURA")}</span><h1>{slide.title}</h1></div><img src={brand} alt="Convex" /></div>
+      <div className="pricing-layout"><div className="pricing-cloud"><table><caption>{tr("Cuotas incluidas de Convex Cloud")}</caption><thead><tr><th scope="col">{tr("Recurso")}</th><th scope="col">Free / Starter</th><th scope="col">Professional</th></tr></thead><tbody>{rows.map((cells,i)=><tr key={i}><th scope="row">{cells[0]}</th><td>{cells[1]??"—"}</td><td>{cells[2]??"—"}</td></tr>)}</tbody></table>
+      <p className="pricing-metering">{tr("Free: límites fijos. Starter y Pro: excedentes por uso.")}<br/>{tr("Las actualizaciones de suscripción y tareas también cuentan como llamadas.")}</p></div>
+      <aside className="pricing-selfhost"><span className="story-kicker">SELF-HOSTED</span><div className="selfhost-icon"><ServiceIcon index={0}/></div><h2>{tr("El mismo backend. En tus servidores.")}</h2><ul><li>{tr("Docker + backend + dashboard")}</li><li>{tr("Código y datos bajo tu control")}</li><li>{tr("Infraestructura y operación a tu cargo")}</li></ul><div className="pricing-license"><b>FSL → Apache 2.0</b><p>{tr("Fair source: Apache tras 2 años por versión. Restringe servicios comerciales competidores.")}</p></div><p className="pricing-portability">{tr("Portabilidad de hosting; las APIs siguen siendo Convex.")}</p></aside></div>
+      <footer className="pricing-sources"><span>{tr("Cuotas por equipo · USD · US East · 21 nov 2026")}</span><div><a href="https://www.convex.dev/pricing" target="_blank" rel="noreferrer">Pricing ↗</a><a href="https://docs.convex.dev/self-hosting" target="_blank" rel="noreferrer">Self-hosting ↗</a><a href="https://github.com/convex/convex-backend/blob/main/LICENSE.md" target="_blank" rel="noreferrer">{tr("Licencia")} ↗</a></div></footer>
+    </div>;
+  }
   if (slide.layout === "cache") {
     const steps = slide.body.split("\n").filter(line => line.trim()).slice(0,3).map(line => { const [title,...detail] = line.split("|"); return {title:title.trim(),detail:detail.join("|").trim()}; });
     return <div className="story-cache">
