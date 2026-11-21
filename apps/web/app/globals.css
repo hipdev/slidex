@@ -463,7 +463,7 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .invite-copy-status { min-height:2.5em; font-size:14px; }
 
 /* JD and the room's shared deadline. */
-.countdown { position:absolute; top:clamp(22px,3vw,46px); right:clamp(22px,3vw,46px); z-index:3; color:#442a1d; pointer-events:none; }
+.countdown { position:absolute; top:clamp(22px,3vw,46px); right:clamp(22px,3vw,46px); z-index:6; color:#442a1d; pointer-events:none; }
 .countdown-digits { display:block; font:500 clamp(26px,2.8vw,40px)/1 'DM Mono',monospace; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
 .countdown.urgent { color:#a34500; }
 .countdown.finished { color:#972c21; }
@@ -589,3 +589,34 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 /* Keep the larger QR square intact when the welcome view scrolls on phones. */
 .stage.opening>.slide-copy,.stage.opening>.stage-meta,.stage.opening>.slide-footer,.stage.opening>.join-card { flex-shrink:0; }
 .stage.opening>.reaction-strip { position:relative; bottom:auto; left:auto; flex-shrink:0; }
+
+/* JD's vector portrait lives outside the slide: the page can turn under him. */
+.jd-character { width:168px; margin:0 0 7px auto; pointer-events:none; user-select:none; }
+.jd-portrait { width:100%; aspect-ratio:320/326; }
+.jd-pixi { width:100%; height:100%; }
+.jd-pixi canvas { display:block; width:100%!important; height:100%!important; }
+.jd-portrait-fallback { display:grid; place-items:center; width:70%; height:70%; margin:15%; border-radius:50%; background:#ffcb38; color:#292532; font:bold 32px/1 'DM Sans',sans-serif; }
+.jd-character-caption { display:flex; align-items:center; justify-content:center; gap:7px; color:#553926; font:500 11px/1.3 'DM Sans',sans-serif; white-space:nowrap; background:#fff8e9; border:1px solid #cfb89c; border-radius:20px; padding:5px 9px; width:fit-content; margin:-9px auto 0; position:relative; }
+.jd-character-caption b { color:#8c3b26; font-family:'DM Mono',monospace; }
+.jd-dock.is-open > .jd-character { position:absolute; top:7px; left:13px; width:76px; margin:0; }
+.jd-dock.is-open .jd-character-caption { display:none; }
+.jd-dock.is-open .jd-panel > header { padding-left:76px; min-height:70px; }
+.jd-spectator { position:fixed; right:20px; bottom:20px; width:105px; z-index:24; opacity:.65; transition:opacity .25s; }
+.jd-spectator.is-acting { opacity:1; }
+.presentation-mode .jd-spectator { bottom:80px; }
+.jd-spectator .jd-character-caption { font-size:10px; }
+.book-turn-viewport { position:absolute; inset:0; z-index:4; pointer-events:none; perspective:2000px; overflow:clip; border-radius:inherit; }
+.book-leaf { position:absolute; inset:0; transform-style:preserve-3d; will-change:transform; box-shadow:12px 0 36px #3f24183d; }
+.stage.book-page-copy { position:absolute!important; inset:0!important; margin:0!important; width:100%!important; max-width:none!important; height:100%!important; min-height:0!important; box-shadow:none!important; overflow:hidden!important; backface-visibility:hidden; }
+.book-page-copy *, .book-page-copy::before { animation:none!important; transition:none!important; }
+.book-page-back { position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); background:linear-gradient(90deg,#e5c7a7,#fff7e8 12%,#fff9ef 95%,#c8a882); border:1px solid #c8a882; }
+.book-leaf::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,#67472b30,transparent 7%,transparent 94%,#57382018); transform:translateZ(1px); backface-visibility:hidden; }
+@media(max-width:680px) {
+  .jd-dock > .jd-character { width:119px; }
+  .jd-character-caption { font-size:10px; }
+  .jd-spectator { right:12px; bottom:12px; width:76px; }
+  .jd-spectator:not(.is-acting) .jd-character-caption span { display:none; }
+  .jd-dock.is-open .jd-panel > header { padding-left:68px; }
+  .jd-dock.is-open > .jd-character { left:7px; width:72px; }
+}
+@media(prefers-reduced-motion:reduce) { .book-turn-viewport { display:none; } }

@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { z } from "zod";
 import { action, internalMutation, mutation, type MutationCtx, env } from "./_generated/server";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { requireOwner } from "./presentations";
 import { limits } from "./limits";
 
@@ -16,6 +16,10 @@ const commandSchema = z.object({
 const slideSchema = z.object({ title: z.string().trim().min(1).max(80), body: z.string().trim().min(1).max(600) });
 type Command = z.infer<typeof commandSchema>;
 const locale = v.union(v.literal("es"), v.literal("en"));
+
+function cue(room: Doc<"presentations">, kind: "timer" | "next" | "previous" | "create_slide", slideId?: Id<"slides">, deltaSeconds?: number) {
+  return { sequence: (room.jdCue?.sequence ?? 0) + 1, createdAt: Date.now(), kind, slideId, deltaSeconds };
+}
 
 // The deadline is written once; clients render it against a sampled server clock.
 // No per-second writes, scheduled jobs, or broadcast fan-out are needed.
@@ -32,12 +36,12 @@ async function controlTimer(ctx: MutationCtx, args: {
     if (seconds === undefined || !Number.isInteger(seconds) || seconds < 10 || seconds > 14_400) {
       throw new ConvexError("JD_INVALID_DURATION");
     }
-    await ctx.db.patch(room._id, { countdown: { durationSeconds: seconds, remainingMs: seconds * 1000, endsAt: now + seconds * 1000, updatedAt: now } });
+    await ctx.db.patch(room._id, { jdCue: cue(room, "timer"), countdown: { durationSeconds: seconds, remainingMs: seconds * 1000, endsAt: now + seconds * 1000, updatedAt: now } });
     const duration = seconds % 60 === 0 ? `${seconds / 60} ${es ? "minutos" : "minutes"}` : `${seconds} ${es ? "segundos" : "seconds"}`;
     return es ? `¡En marcha! Tienes ${duration}. El reloj ya corre en todas las pantallas. Que las ideas vuelen, no el tiempo.` : `You're on! ${duration}. Every screen is ticking together. Let the ideas fly, not the time.`;
   }
   if (args.operation === "clear") {
-    await ctx.db.patch(room._id, { countdown: undefined });
+    if (room.countdown) await ctx.db.patch(room._id, { countdown: undefined, jdCue: cue(room, "timer") });
     return es ? "Contador retirado de todas las pantallas." : "Countdown removed from every screen.";
   }
   const timer = room.countdown;
@@ -48,7 +52,7 @@ async function controlTimer(ctx: MutationCtx, args: {
     const current = timer.endsAt === undefined ? timer.remainingMs : Math.max(0, timer.endsAt - now);
     const remainingMs = Math.max(0, current + delta * 1000);
     if (remainingMs > 14_400_000) throw new ConvexError("JD_INVALID_DURATION");
-    await ctx.db.patch(room._id, { countdown: {
+    await ctx.db.patch(room._id, { jdCue: cue(room, "timer", undefined, delta), countdown: {
       ...timer, remainingMs, durationSeconds: Math.max(0, timer.durationSeconds + delta),
       endsAt: timer.endsAt === undefined ? undefined : now + remainingMs, updatedAt: now,
     } });
@@ -57,13 +61,14 @@ async function controlTimer(ctx: MutationCtx, args: {
     return es ? `${delta < 0 ? "Resté" : "Sumé"} ${amount} al tiempo restante en todas las pantallas.${timer.endsAt === undefined ? " Sigue en pausa." : ""}` : `${delta < 0 ? "Removed" : "Added"} ${amount} ${delta < 0 ? "from" : "to"} the time remaining on every screen.${timer.endsAt === undefined ? " Still paused." : ""}`;
   }
   if (args.operation === "pause") {
-    const remainingMs = timer.endsAt === undefined ? timer.remainingMs : Math.max(0, timer.endsAt - now);
-    await ctx.db.patch(room._id, { countdown: { ...timer, remainingMs, endsAt: undefined, updatedAt: now } });
+    if (timer.endsAt === undefined) return es ? "El contador ya está en pausa." : "The countdown is already paused.";
+    const remainingMs = Math.max(0, timer.endsAt - now);
+    await ctx.db.patch(room._id, { jdCue: cue(room, "timer"), countdown: { ...timer, remainingMs, endsAt: undefined, updatedAt: now } });
     return es ? "Pausa sincronizada. Respira, el reloj también necesita un descanso." : "Paused everywhere. Breathe. Even the clock needs a break.";
   }
   if (timer.endsAt !== undefined) return es ? "El contador ya está en marcha." : "The countdown is already running.";
   if (timer.remainingMs <= 0) return es ? "Se acabó el tiempo. Dime una nueva duración para empezar otra vez." : "Time's up. Give me a new duration to start again.";
-  await ctx.db.patch(room._id, { countdown: { ...timer, endsAt: now + timer.remainingMs, updatedAt: now } });
+  await ctx.db.patch(room._id, { jdCue: cue(room, "timer"), countdown: { ...timer, endsAt: now + timer.remainingMs, updatedAt: now } });
   return es ? "Seguimos. El reloj vuelve a correr para todos." : "We're back. The clock is running for everyone.";
 }
 
@@ -109,12 +114,12 @@ export const applyCommand = internalMutation({
         // Insert and select in one transaction, so the audience sees one coherent update.
         await Promise.all(slides.map((existing, index) => ctx.db.patch(existing._id, { order: index >= position ? index + 1 : index })));
         const slideId = await ctx.db.insert("slides", { ...slide.data, presentationId: room._id, kind: "content", order: position, generatedAt: Date.now() });
-        await ctx.db.patch(room._id, { currentSlideId: slideId, showConclusions: false });
+        await ctx.db.patch(room._id, { currentSlideId: slideId, showConclusions: false, jdCue: cue(room, "create_slide", slideId) });
         reply = es ? `Creé «${slide.data.title}» y ya está en todas las pantallas.` : `Created “${slide.data.title}”. It's now on every screen.`;
       } else {
         const target = slides[currentIndex + (args.operation === "next" ? 1 : -1)];
         if (target) {
-          await ctx.db.patch(room._id, { currentSlideId: target._id, showConclusions: false });
+          await ctx.db.patch(room._id, { currentSlideId: target._id, showConclusions: false, jdCue: cue(room, args.operation, target._id) });
           reply = es ? `${args.operation === "next" ? "Avanzamos" : "Volvemos"} a «${target.title}».` : `${args.operation === "next" ? "Moving forward" : "Going back"} to “${target.title}”.`;
         } else reply = es ? `Ya estás en la ${args.operation === "next" ? "última" : "primera"} diapositiva.` : `You're already on the ${args.operation === "next" ? "last" : "first"} slide.`;
       }

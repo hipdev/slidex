@@ -46,6 +46,12 @@ export default defineSchema({
       endsAt: v.optional(v.number()),
       updatedAt: v.number(),
     })),
+    // The latest committed gesture travels with the state it animates. No event log.
+    jdCue: v.optional(v.object({
+      sequence: v.number(), createdAt: v.number(),
+      kind: v.union(v.literal("timer"), v.literal("next"), v.literal("previous"), v.literal("create_slide")),
+      slideId: v.optional(v.id("slides")), deltaSeconds: v.optional(v.number()),
+    })),
     jdLastCommand: v.optional(v.object({ requestId: v.string(), reply: v.string() })),
     agentInboxId: v.optional(v.string()),
     moment: v.optional(v.object({ caption: v.string(), imageUrl: v.optional(v.string()), sourceUrl: v.optional(v.string()), createdAt: v.number() })),

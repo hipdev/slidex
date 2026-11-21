@@ -4,9 +4,11 @@ import { useAction, useMutation } from "convex/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api } from "@slidex/backend/api";
 import type { Id } from "@slidex/backend/data-model";
+import { JDCharacter } from "./jd-character";
+import type { JDCue } from "./jd-motion";
 import { tr, useLocale } from "../i18n/provider";
 
-export function JDVoice({ presentationId }: { presentationId: Id<"presentations"> }) {
+export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentations">; cue?: JDCue }) {
   const talk = useAction(api.jd.talk);
   const control = useMutation(api.jd.control);
   const locale = useLocale();
@@ -16,6 +18,8 @@ export function JDVoice({ presentationId }: { presentationId: Id<"presentations"
   const [transcript, setTranscript] = useState("");
   const [reply, setReply] = useState("");
   const [error, setError] = useState("");
+  const [speaking, setSpeaking] = useState(false);
+  const speechGeneration = useRef(0);
   const [spoken, setSpoken] = useState(true);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -41,9 +45,13 @@ export function JDVoice({ presentationId }: { presentationId: Id<"presentations"
   }, []);
   const speak = (message: string) => {
     if (!spoken || !window.speechSynthesis) return;
+    const token = ++speechGeneration.current;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
     utterance.lang = locale === "es" ? "es-CO" : "en-US";
+    utterance.onstart = () => { if (mounted.current && speechGeneration.current === token) setSpeaking(true); };
+    const finish = () => { if (mounted.current && speechGeneration.current === token) setSpeaking(false); };
+    utterance.onend = finish; utterance.onerror = finish;
     window.speechSynthesis.speak(utterance);
   };
   const showError = (caught: unknown) => {
@@ -62,7 +70,7 @@ export function JDVoice({ presentationId }: { presentationId: Id<"presentations"
   const stop = () => { if (recorder.current?.state === "recording") recorder.current.stop(); release(); };
   const start = async () => {
     if (phase !== "idle") return;
-    setOpen(true); setError(""); window.speechSynthesis?.cancel();
+    setOpen(true); setError(""); speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel();
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setError(tr("Tu navegador no permite grabar. Escribe el comando abajo.")); input.current?.focus(); return;
     }
@@ -97,12 +105,13 @@ export function JDVoice({ presentationId }: { presentationId: Id<"presentations"
     if (busy) return;
     generation.current++;
     if (recorder.current?.state === "recording") recorder.current.stop();
-    release(); setPhase("idle"); setOpen(false); window.speechSynthesis?.cancel(); button.current?.focus();
+    release(); setPhase("idle"); setOpen(false); speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel(); button.current?.focus();
   };
   const submit = (event: FormEvent) => { event.preventDefault(); if (text.trim() && phase === "idle") void send({ text: text.trim() }); };
-  return <div className="jd-dock">
+  return <div className={`jd-dock ${open ? "is-open" : ""}`}>
+    <JDCharacter cue={cue} phase={phase === "idle" && speaking ? "speaking" : phase} />
     {open && <section id="jd-panel" className="jd-panel" role="region" aria-label={tr("JD, tu copiloto de voz")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); close(); } }}>
-      <header><div className="jd-avatar" aria-hidden="true">JD</div><div><strong>{tr("JD, tu copiloto de voz")}</strong><small>{tr("Tú hablas. La sala responde.")}</small></div><button disabled={busy} className="jd-close" aria-label={tr("Cerrar JD")} onClick={close}>×</button></header>
+      <header><div><strong>{tr("JD, tu copiloto de voz")}</strong><small>{tr("Tú hablas. La sala responde.")}</small></div><button disabled={busy} className="jd-close" aria-label={tr("Cerrar JD")} onClick={close}>×</button></header>
       <p>{tr("Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.")}</p>
       <p className="jd-examples">{tr("Prueba: JD, siguiente slide. O: baja el contador 4 minutos.")}</p>
       <div className={`jd-listening ${phase}`} role="status">{tr(phase === "recording" ? "Te escucho… pulsa de nuevo para terminar (máx. 30 s)" : phase === "thinking" ? "JD está preparando la respuesta…" : phase === "permission" ? "Esperando permiso del micrófono…" : "Un clic para hablar. Otro para terminar.")}</div>
@@ -110,7 +119,7 @@ export function JDVoice({ presentationId }: { presentationId: Id<"presentations"
       {reply && <p className="jd-reply" role="status">{reply}</p>}
       {error && <p className="jd-error" role="alert">{error}</p>}
       <form onSubmit={submit}><label htmlFor="jd-command">{tr("También puedes escribirle")}</label><div><input ref={input} id="jd-command" value={text} onChange={event => setText(event.target.value)} maxLength={1000} placeholder={tr("JD, crea un slide sobre Convex")} disabled={phase !== "idle"} /><button type="submit" disabled={phase !== "idle" || !text.trim()}>{tr("Enviar")}</button></div></form>
-      <label className="jd-spoken"><input type="checkbox" checked={spoken} onChange={event => { setSpoken(event.target.checked); if (!event.target.checked) window.speechSynthesis?.cancel(); }} />{tr("Responder en voz alta")}</label>
+      <label className="jd-spoken"><input type="checkbox" checked={spoken} onChange={event => { setSpoken(event.target.checked); if (!event.target.checked) { speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel(); } }} />{tr("Responder en voz alta")}</label>
       <details><summary>{tr("Contador rápido · sin micrófono")}</summary><div className="jd-presets">{[15, 30, 45].map(minutes => <button key={minutes} disabled={phase !== "idle"} onClick={async () => {
         setPhase("thinking"); setError("");
         try { const message = await control({ presentationId, operation: "set", seconds: minutes * 60, locale }); if (mounted.current) { setReply(message); speak(message); } }

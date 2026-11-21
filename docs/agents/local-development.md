@@ -133,6 +133,33 @@ de la generación para permitir dirigir la charla sin agotar el límite de slide
 `déjalo en diez minutos` fija un contador nuevo. Un ajuste conserva la pausa
 si estaba pausado, nunca baja de cero y no permite más de cuatro horas restantes.
 
+### Avatar y páginas de JD
+
+El retrato vectorial de JD se dibuja con PixiJS 8.23 y se carga bajo
+`React.lazy`, `Suspense` y `ClientOnly`. No se distribuye la foto de referencia.
+La cabeza, ojos, boca, brazos, libro y reloj se animan por separado. El presentador
+ve los estados locales de escucha, pensamiento y habla; la audiencia ve los gestos
+de las acciones confirmadas, sin recibir controles ni el audio del micrófono.
+
+`presentations.jdCue` es opcional y contiene únicamente el último gesto, su
+secuencia y, cuando corresponde, la diapositiva destino o ajuste de segundos.
+Se escribe en la misma transacción que el contador o la selección de diapositiva.
+No se escribe por frame ni por segundo. Reintentos inmediatos y comandos sin
+efecto no generan otro gesto; las navegaciones manuales conservan su transición
+habitual. Al recargar, entrar tarde o volver de una pestaña oculta no se repiten
+las animaciones anteriores. El cliente puede omitir gestos intermedios si recibe
+varios cambios agrupados: siempre presenta el último estado confirmado.
+
+`BookStage` congela una copia inerte de la diapositiva saliente para girarla con
+perspectiva, sombra y reverso de papel durante 900 ms. No monta otro árbol React
+ni duplica suscripciones o controles. El contador permanece encima del papel.
+Los canvas salientes conservan su espacio pero no se capturan como imágenes.
+Una nueva navegación, cambio de tamaño o pestaña oculta cancela la hoja anterior.
+Con movimiento reducido no hay giro ni bucles; el retrato conserva poses estáticas.
+Pixi limita resolución y FPS, detiene el ticker fuera de pantalla y libera sus
+recursos al desmontarse; ofrece Canvas2D como alternativa a WebGL y una insignia
+si no puede iniciar el renderizador.
+
 La primera diapositiva muestra un QR ampliado y el código de cuatro caracteres.
 La bienvenida y los textos iniciales del demo se muestran en español por defecto;
 el antiguo párrafo introductorio no se muestra en la portada. El texto escrito

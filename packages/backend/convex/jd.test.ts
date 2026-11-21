@@ -176,3 +176,32 @@ test("the full voice action interprets relative time, navigation and slide gener
     expect(created.presentation.currentSlideId).toBe(created.slides[2]._id);
   } finally { fetch.mockRestore(); vi.unstubAllEnvs(); }
 });
+
+test("committed JD gestures are reactive, atomic, deduplicated and absent for failed or manual navigation", async () => {
+  const { host, guest, room } = await fixture();
+  const read = async () => (await guest.query(api.presentations.getBySlug, { slug: room.slug }))!;
+  expect((await read()).presentation.jdCue).toBeUndefined();
+  const command = { presentationId:room.presentationId, locale:"es" as const, operation:"next" as const, requestId:"gesture-next" };
+  await host.mutation(internal.jd.applyCommand, command);
+  const moved = await read();
+  expect(moved.presentation.jdCue).toMatchObject({ sequence:1, kind:"next", slideId:moved.presentation.currentSlideId });
+  await host.mutation(internal.jd.applyCommand, command);
+  expect((await read()).presentation.jdCue).toEqual(moved.presentation.jdCue);
+  await host.mutation(api.presentations.setCurrentSlide, { presentationId:room.presentationId, slideId:moved.slides[0]._id });
+  expect((await read()).presentation.jdCue).toEqual(moved.presentation.jdCue);
+  await host.mutation(internal.jd.applyCommand, { ...command, operation:"previous", requestId:"at-start" });
+  expect((await read()).presentation.jdCue).toEqual(moved.presentation.jdCue);
+  await expect(guest.mutation(api.jd.control, { presentationId:room.presentationId, operation:"set", seconds:1800, locale:"es" })).rejects.toThrow();
+  await host.mutation(api.jd.control, { presentationId:room.presentationId, operation:"resume", locale:"es" });
+  expect((await read()).presentation.jdCue).toEqual(moved.presentation.jdCue);
+  await host.mutation(api.jd.control, { presentationId:room.presentationId, operation:"set", seconds:1800, locale:"es" });
+  await host.mutation(internal.jd.applyCommand, { ...command, operation:"adjust", seconds:-240, requestId:"gesture-time" });
+  const timed = await read();
+  expect(timed.presentation.jdCue).toMatchObject({ sequence:3, kind:"timer", deltaSeconds:-240 });
+  expect(timed.presentation.countdown!.durationSeconds).toBe(1560);
+  await expect(host.mutation(internal.jd.applyCommand, { ...command, operation:"create_slide", requestId:"bad-slide", slide:{title:"",body:""} })).rejects.toThrow();
+  expect((await read()).presentation.jdCue).toEqual(timed.presentation.jdCue);
+  await host.mutation(internal.jd.applyCommand, { ...command, operation:"create_slide", requestId:"new-page", expectedSlideId:timed.presentation.currentSlideId, slide:{title:"Una página nueva",body:"Creada por JD"} });
+  const created = await read();
+  expect(created.presentation.jdCue).toMatchObject({ sequence:4, kind:"create_slide", slideId:created.presentation.currentSlideId });
+});

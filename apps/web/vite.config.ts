@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
             "convex/react", "convex/server", "convex/values",
             "d3-scale", "i18next", "qrcode.react", "react-i18next",
             "react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime",
-            "three",
+            "three", "pixi.js",
           ],
         },
       },
