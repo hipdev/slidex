@@ -828,3 +828,20 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 @media(max-width:680px) { .presentation-mode .stage.design-photo>.stage-meta { padding:22px; }.story-photo-image { top:12%; height:48%; object-fit:contain; object-position:center; } }
 
 .reactivity-diagram { width:100%; max-width:660px; justify-self:end; }
+.room-rejoin-form { width:min(100%,440px); margin:28px 0; padding:22px; border:1px solid #c8ac96; border-radius:18px; background:#fffcf5; color:#432c22; }
+.room-rejoin-form>label { display:block; font-size:18px; font-weight:800; }
+.room-rejoin-form>p { font-size:13px; line-height:1.5; color:#735747; margin:8px 0 16px; }
+.room-rejoin-form>div { display:flex; gap:8px; }
+.room-rejoin-form input { min-width:0; width:100%; padding:12px; border:1px solid #b58f75; border-radius:9px; background:white; color:#432c22; font:600 18px 'DM Mono',monospace; }
+.setup .room-rejoin-form button { margin:0; padding:10px 15px; min-height:48px; white-space:nowrap; border-radius:9px; box-shadow:none; font-size:14px; }
+.presentation-title-editor { position:relative; min-width:0; }
+.presentation-title-trigger { display:flex; gap:9px; align-items:center; padding:0; min-height:30px; border:0; border-radius:5px; background:transparent; color:inherit; text-align:left; max-width:100%; }
+.presentation-title-trigger>span { color:#d0ae92; }
+.presentation-title-trigger:hover strong { text-decoration:underline; text-underline-offset:4px; }
+.presentation-title-form { position:absolute; top:calc(100% + 12px); left:0; z-index:70; width:min(360px,calc(100vw - 40px)); padding:18px; border:1px solid #b18f76; border-radius:14px; background:#fff9ef; color:#432c22; box-shadow:0 16px 40px #21150f55; display:grid; gap:12px; }
+.presentation-title-form label { font-size:13px; font-weight:750; }
+.presentation-title-form input { width:100%; min-width:0; border:1px solid #b18f76; padding:12px; border-radius:8px; background:white; color:#432c22; font-size:16px; }
+.presentation-title-form>div { display:flex; gap:8px; }
+.presentation-title-form button { padding:8px 14px; border:1px solid #9d7761; border-radius:8px; background:#432c22; color:white; font-size:13px; }
+.presentation-title-form button[type=button] { background:transparent; color:#432c22; }
+.presentation-title-form p { font-size:12px; color:#a52f22; margin:0; }

@@ -18,6 +18,8 @@ import { AccountDialog } from "./account-dialog";
 import { Countdown } from "./countdown";
 import { JDVoice } from "./jd-voice";
 import { JDCharacter } from "./jd-character";
+import { RoomJoinForm } from "./room-join-form";
+import { PresentationTitle } from "./presentation-title";
 import { DesignedSlide } from "./designed-slide";
 import { BookStage } from "./book-stage";
 import { JoinCard, roomLink } from "./join-card";
@@ -129,7 +131,7 @@ function Slidex() {
   if (!slug) return <><Launchpad t={tr} ready={!isLoading && isAuthenticated} languagePicker={<LanguagePicker />} onCreate={createRoom} notice={notice} history={history} onAccount={() => setAccountOpen(true)} />{accountDialog}</>;
   if (isLoading || !isAuthenticated) return <><main className="setup"><p className="eyebrow">{tr("CONVEX AUTH")}</p><h1>{tr("Preparando tu entrada…")}</h1>{notice && <p role="alert">{notice}</p>}</main>{accountDialog}</>;
   if (data === undefined) return <><main className="setup"><p className="eyebrow">{tr("CONNECTING TO")} {slug}</p><h1>{tr("Waking the room…")}</h1></main>{accountDialog}</>;
-  if (data === null) return <><main className="setup"><div className="setup-card"><span className="eyebrow">{tr("ROOM NOT FOUND")}</span><h1>{slug} {tr("is not live.")}</h1><button onClick={() => setSlug(null)}>{tr("Create a new live room")}</button></div></main>{accountDialog}</>;
+  if (data === null) return <><main className="setup"><div className="setup-card"><span className="eyebrow">{tr("ROOM NOT FOUND")}</span><h1>{slug} {tr("is not live.")}</h1><RoomJoinForm /><button onClick={() => setSlug(null)}>{tr("Create a new live room")}</button></div></main>{accountDialog}</>;
 
   const current = data.slides.find((slide) => slide._id === data.presentation.currentSlideId) ?? data.slides[0];
   const reactions = countBy(data.reactions.filter((reaction) => reaction.slideId === current?._id), "emoji");
@@ -160,7 +162,7 @@ function Slidex() {
   };
   return <><main className={`app-shell ${presenting ? "presentation-mode" : ""} ${data.isHost ? "host-view" : "audience-view"}`}>
     <header className="topbar">
-      <div className="header-identity"><a href="/" className="logo">SLID<span>EX</span></a><div className="header-room"><strong title={starterText(data.presentation.title)}>{starterText(data.presentation.title)}</strong><span><i />{shareCode} · {tr("participantCount", { count: data.participantCount })}</span></div></div>
+      <div className="header-identity"><a href="/" className="logo">SLID<span>EX</span></a><div className="header-room"><PresentationTitle key={data.presentation._id} presentation={data.presentation} isHost={data.isHost} report={setNotice} /><span><i />{shareCode} · {tr("participantCount", { count: data.participantCount })}</span></div></div>
       <div className="top-actions">
         <LanguagePicker />
         <button className="share account-action" title={account?.email} onClick={() => setAccountOpen(true)}><span>{account?.isAnonymous ? tr("Guardar cuenta") : tr("Mi cuenta")}</span>{account?.email && <small className="account-email">{account.email}</small>}</button>

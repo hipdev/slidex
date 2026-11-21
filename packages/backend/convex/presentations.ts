@@ -296,3 +296,15 @@ export async function requireSlide(ctx: MutationCtx | QueryCtx, presentationId: 
   if (!room || room.status === "ended" || !slide || slide.presentationId !== presentationId) throw new Error("Slide is not in an active room");
   return slide;
 }
+
+export const rename = mutation({
+  args: { presentationId: v.id("presentations"), title: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { presentationId, title }) => {
+    await requireOwner(ctx, presentationId);
+    const trimmed = title.trim();
+    if (!trimmed || trimmed.length > 100) throw new Error("Use a presentation title between 1 and 100 characters");
+    await ctx.db.patch(presentationId, { title: trimmed });
+    return null;
+  },
+});

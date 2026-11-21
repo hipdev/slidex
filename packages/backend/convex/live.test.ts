@@ -176,3 +176,14 @@ test("slide layouts are owner-controlled and preserved for clients that omit the
   expect(updated.slides[2].layout).toBe("services");
   expect(updated.slides[0].layout).toBeUndefined();
 });
+
+test("only the owner can rename a presentation; viewers receive the new title", async () => {
+  const {host,guest,room}=await fixture();
+  await expect(guest.mutation(api.presentations.rename,{presentationId:room.presentationId,title:"Other title"})).rejects.toThrow("Only the presentation host");
+  await expect(host.mutation(api.presentations.rename,{presentationId:room.presentationId,title:"   "})).rejects.toThrow("between 1 and 100");
+  await expect(host.mutation(api.presentations.rename,{presentationId:room.presentationId,title:"x".repeat(101)})).rejects.toThrow("between 1 and 100");
+  await host.mutation(api.presentations.rename,{presentationId:room.presentationId,title:"  De Grandpa a Convex  "});
+  const visible=await guest.query(api.presentations.getBySlug,{slug:room.slug});
+  expect(visible?.presentation.title).toBe("De Grandpa a Convex");
+  expect(visible?.presentation.slug).toBe(room.slug);
+});
