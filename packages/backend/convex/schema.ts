@@ -22,7 +22,12 @@ export default defineSchema({
     phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
     createdAt: v.optional(v.number()),
+    mergedInto: v.optional(v.id("users")),
   }).index("by_email", ["email"]),
+  emailOtpChallenges: defineTable({
+    email: v.string(), nonce: v.string(), digest: v.string(), attempts: v.number(),
+    consumed: v.boolean(), expiresAt: v.number(), requesterId: v.optional(v.id("users")),
+  }).index("by_email", ["email"]).index("by_expiresAt", ["expiresAt"]),
   presentations: defineTable({
     title: v.string(),
     slug: v.string(),

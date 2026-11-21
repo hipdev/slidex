@@ -58,6 +58,41 @@ actualizar la web de Vercel. `SITE_URL` en Convex apunta al dominio de la web.
 Las rutas de sala siguen siendo parámetros de una página estática: `?room=LIVE-XXXXX`
 y su enlace corto `?r=XXXXX`; ninguna necesita un servidor de rutas.
 
+## Acceso por correo OTP
+
+Slidex conserva Convex Auth **2.0.0**, sesiones en el navegador e invitados. El
+único acceso con correo es OTP: `authOtp.request` encola un código con el componente
+Resend y `auth.signInWithEmailOtp` lo verifica y entrega la sesión a `setSession`.
+No hay endpoints de usuario/contraseña, recuperación de contraseña ni cookies SSR.
+
+Configura en **cada despliegue de Convex**, nunca en `VITE_*` ni en Vercel:
+
+- `RESEND_API_KEY`: la clave de envío de Resend.
+- `RESEND_FROM`: `Slidex <dirección verificada>`; debe conservar un remitente válido.
+- `EMAIL_OTP_SECRET`: secreto aleatorio de 32 bytes o más, diferente por entorno,
+  utilizado para HMAC de los códigos. No lo sustituyas por una clave de servicio.
+
+El flujo y las seis casillas se adaptaron de Tranky. Los códigos duran cinco
+minutos, solo se usan una vez, admiten cinco intentos y se vinculan a la identidad
+que los pidió. El reenvío espera 60 segundos; hay límites por correo y globales.
+Los desafíos guardan un nonce y un HMAC, nunca el código, y se eliminan al vencer.
+La entrega se encola en Resend dentro de la misma transacción; un fallo al encolar
+revierte el desafío y los límites consumidos.
+
+Un correo nuevo convierte al invitado en cuenta verificada **sin cambiar su ID**.
+Para un correo que ya tiene cuenta, las presentaciones del invitado se trasladan
+a esa identidad existente en lotes de 100. Solo ocurre tras verificar el código.
+Las sesiones invitadas anteriores se revocan y el core mantiene renovación y
+cierre de las sesiones OTP. Las cuentas de la etapa de contraseñas conservan sus
+usuarios e historial y acceden ahora mediante el código enviado a su correo.
+
+Las pruebas de Auth usan una base aislada y simulan la cola de Resend: no mandan
+correos reales. Comprueban propiedad, migración de invitados, compatibilidad con
+cuentas existentes, límites, caducidad, reemplazo y uso único de códigos, fallos
+de entrega, renovación y revocación. Comprueba ambos pasos del diálogo en móvil
+y escritorio antes de publicar. El frontend requiere `input-otp` en la lista
+explícita de dependencias que Vite precompila.
+
 ## JD y contador compartido
 
 JD reutiliza los Workers de transcripción e interpretación de Conjuntify. Configura

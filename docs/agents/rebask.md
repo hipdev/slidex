@@ -38,7 +38,7 @@ prácticas y el pequeño adaptador estático tengan un contrato verificable.
 
 Conserva la sesión y los providers en un árbol estable. La integración actual de
 Auth 2.0 es de cliente, igual que antes de la migración. Se mantienen invitados,
-registro con correo/contraseña, renovación, revocación y conversión del invitado
+acceso por OTP al correo con Resend, renovación, revocación y conversión del invitado
 sin perder su usuario ni sus presentaciones. No hay cookies SSR/httpOnly ni
 sesiones de Conjuntify copiadas a este proyecto.
 

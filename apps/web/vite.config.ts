@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
           noDiscovery: true,
           include: [
             "@convex-dev/auth/react",
-            "@convex-dev/auth/methods/username-password/react",
+            "input-otp",
             "@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities",
             "convex/react", "convex/server", "convex/values",
             "d3-scale", "i18next", "qrcode.react", "react-i18next",

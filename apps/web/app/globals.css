@@ -525,3 +525,40 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
   .presentation-mode .stage .slide-copy h1 { font-size:clamp(30px,8vw,48px); }
 }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* Email OTP: Tranky's flow in Slidex's warm account dialog. */
+.account-dialog { border:0; margin:auto; padding:32px; }
+.account-dialog::backdrop { background:#21161099; backdrop-filter:blur(5px); }
+.account-content>.eyebrow { color:#795b4e; margin:0 48px 24px 0; }
+.account-intro { margin:0 0 26px; color:#73574a; font-size:14px; line-height:1.65; }
+.account-content .dialog-close { min-height:40px; width:40px; }
+.otp-steps { display:flex; align-items:center; gap:12px; margin:4px 0 26px; font-size:11px; font-weight:700; color:#9a8174; }
+.otp-steps i { flex:1; min-width:18px; height:1px; background:#ddcbbb; }
+.otp-steps .active { color:#a43827; }.otp-steps .complete { color:#5e713b; }
+.account-dialog .otp-form { display:grid; gap:15px; }
+.account-dialog .otp-form label { font-size:13px; gap:9px; }
+.account-dialog .otp-form input[type=email] { min-height:52px; padding:14px; }
+.account-dialog .otp-form .primary { display:flex; align-items:center; justify-content:center; gap:18px; min-height:52px; font-size:14px; }
+.otp-context { text-align:center; margin:0 0 12px; }
+.otp-mail-icon { display:grid; place-items:center; width:52px; height:52px; margin:0 auto 16px; border-radius:50%; background:#f2e2d3; color:#9e4933; font-size:27px; }
+.otp-context h3 { font:600 27px/1.2 'Playfair Display',Georgia,serif; margin:0 0 10px; }
+.otp-context p { margin:0 0 6px; font-size:13px; color:#856756; }
+.otp-destination { font-size:14px; color:#4e3025; overflow-wrap:anywhere; }
+.otp-label { font-size:12px; font-weight:700; color:#6a4b3c; }
+.otp-input { width:100%; display:flex; justify-content:center; cursor:text; }
+.otp-slots { display:flex; gap:10px; justify-content:center; width:100%; }
+.otp-slot { display:grid; place-items:center; width:55px; height:66px; border:1px solid #ba9680; border-radius:10px; background:#fffdfa; color:#43291e; font:500 29px 'DM Mono',monospace; }
+.otp-slot.active { border:2px solid #bd4a33; box-shadow:0 0 0 3px #bd4a331f; }
+.otp-slot.filled { background:#fff4e7; }.otp-slot.invalid { border-color:#bd3329; background:#fff0eb; }
+.otp-caret { display:block; width:2px; height:25px; background:#ae3e2a; animation:otp-caret 1s step-end infinite; }
+@keyframes otp-caret { 50% { opacity:0; } }
+.otp-helper { margin:0; font-size:11px; line-height:1.5; text-align:center; color:#7c6050; }
+.otp-support { margin-top:18px; text-align:center; }.otp-support>p,.otp-assurance { margin:16px 0; color:#826554; font-size:11px; line-height:1.65; }
+.otp-assurance { text-align:center; }
+.otp-links { display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:center; }
+.otp-links button { border:0; background:transparent; color:#963d29; text-decoration:underline; text-underline-offset:3px; font-size:12px; font-weight:700; min-height:40px; padding:4px; }
+.otp-links button:disabled { color:#92796b; text-decoration:none; }
+.otp-success { padding:12px; background:#edf1e2; color:#4d622d; border-radius:9px; font-size:13px; line-height:1.5; }
+.account-dialog .presentation-history p { font-size:12px; color:#816455; }
+.account-dialog input:focus-visible,.otp-links button:focus-visible { outline:3px solid #c85835; outline-offset:3px; }
+@media(max-width:540px) { .account-dialog { width:calc(100% - 28px); max-height:calc(100dvh - 28px); padding:26px 22px; }.account-dialog h2 { font-size:31px; }.account-content>.eyebrow { font-size:10px; letter-spacing:.14em; }.otp-slots { gap:6px; }.otp-slot { width:calc((100% - 30px)/6); max-width:48px; height:56px; font-size:26px; }.otp-steps { gap:8px; font-size:10px; }.presentation-history>a { flex-wrap:wrap; }.presentation-history>a small { text-align:left; } }

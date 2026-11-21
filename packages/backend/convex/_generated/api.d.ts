@@ -9,11 +9,13 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as authOtp from "../authOtp.js";
 import type * as http from "../http.js";
 import type * as inbox from "../inbox.js";
 import type * as interventions from "../interventions.js";
 import type * as jd from "../jd.js";
 import type * as language from "../language.js";
+import type * as lib_emailSecurity from "../lib/emailSecurity.js";
 import type * as limits from "../limits.js";
 import type * as live from "../live.js";
 import type * as moments from "../moments.js";
@@ -30,11 +32,13 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  authOtp: typeof authOtp;
   http: typeof http;
   inbox: typeof inbox;
   interventions: typeof interventions;
   jd: typeof jd;
   language: typeof language;
+  "lib/emailSecurity": typeof lib_emailSecurity;
   limits: typeof limits;
   live: typeof live;
   moments: typeof moments;
@@ -72,8 +76,7 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   auth: import("@convex-dev/auth/_generated/component.js").ComponentApi<"auth">;
-  authPasswordProvider: import("@convex-dev/auth/components/password/_generated/component.js").ComponentApi<"authPasswordProvider">;
-  authUsername: import("@convex-dev/auth/components/username/_generated/component.js").ComponentApi<"authUsername">;
+  resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
   agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
   staticHosting: import("@convex-dev/static-hosting/_generated/component.js").ComponentApi<"staticHosting">;
   rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;

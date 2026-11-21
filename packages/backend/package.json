@@ -26,6 +26,7 @@
     "@convex-dev/ai-sdk-provider": "^0.3.0",
     "@convex-dev/auth": "2.0.0",
     "@convex-dev/rate-limiter": "^0.4.3",
+    "@convex-dev/resend": "0.2.10",
     "@convex-dev/static-hosting": "^0.2.2",
     "ai": "^7.0.176",
     "convex": "^1.50.0",

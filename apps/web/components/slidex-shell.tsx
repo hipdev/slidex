@@ -2,9 +2,8 @@
 import { tr, friendlyError, useTranslation, useLocale } from "../i18n/provider";
 
 import { ConvexAuthProvider, useAuthActions } from "@convex-dev/auth/react";
-import { useSignInWithUsernamePassword, useSignUpWithUsernamePassword } from "@convex-dev/auth/methods/username-password/react";
 import { ConvexReactClient, useConvexAuth, useAction, useMutation, useQuery } from "convex/react";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@slidex/backend/api";
 
 import { lazy, Suspense } from "react";
@@ -14,6 +13,7 @@ import { LanguagePicker } from "../i18n/provider";
 import { AiCompanion, QuickGuide } from "./ai-companion";
 import { SlideEditor } from "./slide-editor";
 import { InviteDialog } from "./invite-dialog";
+import { AccountDialog } from "./account-dialog";
 import { Countdown } from "./countdown";
 import { JDVoice } from "./jd-voice";
 import { JoinCard, roomLink } from "./join-card";
@@ -66,8 +66,6 @@ function Slidex() {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut, setSession } = useAuthActions();
   const createGuest = useMutation(api.auth.signInAnonymous);
-  const { signUp, pending: signUpPending } = useSignUpWithUsernamePassword(api.auth);
-  const { signIn, pending: signInPending } = useSignInWithUsernamePassword(api.auth);
   const account = useQuery(api.users.me, isAuthenticated ? {} : "skip");
   const history = useQuery(api.presentations.listMine, isAuthenticated ? {} : "skip");
   const data = useQuery(api.presentations.getBySlug, slug ? { slug } : "skip");
@@ -103,7 +101,7 @@ function Slidex() {
   };
 
   if (isLoading || !isAuthenticated) return <main className="setup"><p className="eyebrow">{tr("CONVEX AUTH")}</p><h1>{tr("Preparando tu entrada…")}</h1>{notice && <p role="alert">{notice}</p>}</main>;
-  if (!slug) return <><Launchpad onCreate={createRoom} notice={notice} account={account} history={history} onAccount={() => setAccountOpen(true)} />{accountOpen && <AccountDialog account={account} history={history} signUp={signUp} signIn={signIn} signUpPending={signUpPending} signInPending={signInPending} onClose={() => setAccountOpen(false)} onSignOut={() => void signOut()} />}</>;
+  if (!slug) return <><Launchpad onCreate={createRoom} notice={notice} account={account} history={history} onAccount={() => setAccountOpen(true)} />{accountOpen && <AccountDialog account={account} history={history} onClose={() => setAccountOpen(false)} onSignOut={signOut} />}</>;
   if (data === undefined) return <main className="setup"><p className="eyebrow">{tr("CONNECTING TO")} {slug}</p><h1>{tr("Waking the room…")}</h1></main>;
   if (data === null) return <main className="setup"><div className="setup-card"><span className="eyebrow">{tr("ROOM NOT FOUND")}</span><h1>{slug} {tr("is not live.")}</h1><button onClick={() => setSlug(null)}>{tr("Create a new live room")}</button></div></main>;
 
@@ -138,7 +136,7 @@ function Slidex() {
       </div>
     </header>
     {data.isHost && <JDVoice key={data.presentation._id} presentationId={data.presentation._id} />}
-    {accountOpen && <AccountDialog account={account} history={history} signUp={signUp} signIn={signIn} signUpPending={signUpPending} signInPending={signInPending} onClose={() => setAccountOpen(false)} onSignOut={() => void signOut()} />}
+    {accountOpen && <AccountDialog account={account} history={history} onClose={() => setAccountOpen(false)} onSignOut={signOut} />}
     {data.isHost && !presenting && current && <InterventionCue slideId={current._id} onReview={() => { setPresenting(false); setPanel("twists"); }} />}
     {copyNotice && <div className="copy-toast" role="status"><span>✓ {tr("Enlace copiado; compártelo para invitar a la sala")}</span><button aria-label={tr("Cerrar aviso")} onClick={() => setCopyNotice(false)}>×</button></div>}
     {notice && <div className="notice" role="status">{notice}<button aria-label={tr("Cerrar aviso")} onClick={() => setNotice("")}>×</button></div>}
@@ -179,34 +177,7 @@ function Launchpad({ onCreate, notice, account, history, onAccount }: { onCreate
   useTranslation();
   const [busy,setBusy] = useState(false);
   const [code,setCode] = useState("");
-  return <main className="launchpad"><div className="hero-grid"><div className="landing-top"><span className="eyebrow">{tr("SLIDEX / BETA")}</span><div className="landing-actions"><button className="account-link" onClick={onAccount}>{account?.isAnonymous ? "Save your work" : "My presentations"}{history?.length ? ` (${history.length})` : ""}</button><LanguagePicker /></div></div><h1>{tr("Tu próxima charla,")}<br /><em>{tr("viva.")}</em></h1><p>{tr("Una presentación que escucha. Tu audiencia propone, la web aporta y las mejores ideas llegan al escenario.")}</p><button disabled={busy} onClick={async () => { setBusy(true); try { await onCreate(); } finally { setBusy(false); } }}>{busy ? tr("Creando tu sala…") : tr("Crear una sala en vivo")} <span>↗</span></button>{notice && <p role="alert">{notice}</p>}<form className="join-form" onSubmit={event => { event.preventDefault(); window.location.assign(`?room=${encodeURIComponent(code.trim().toUpperCase().startsWith("LIVE-") ? code.trim().toUpperCase() : `LIVE-${code.trim().toUpperCase()}`)}`); }}><label htmlFor="room-code">{tr("¿Vienes como audiencia?")}</label><div><input id="room-code" required pattern="([Ll][Ii][Vv][Ee]-)?[A-Za-z0-9]{5}" maxLength={20} value={code} onChange={e => setCode(e.target.value)} placeholder={tr("Código LIVE-XXXXX")}/><button disabled={!code.trim()}>{tr("Unirme →")}</button></div></form><small>{tr("Convex · OpenAI · Firecrawl · AgentMail")}</small></div><div className="manifesto"><div className="signal">✦</div><p>{tr("“El último slide todavía no existe. Lo escribirá tu audiencia.”")}</p><div className="feature-list"><span>{tr("01 · Crea tu sala y comparte el enlace")}</span><span>{tr("02 · Presenta, escucha y acepta ideas")}</span><span>{tr("03 · Cierra con lo que descubrieron juntos")}</span></div></div></main>;
-}
-
-type PasswordResult = { status: "complete" | "error"; userError?: { error: string; minimumLength?: number; retryAfterMs?: number } };
-
-function AccountDialog({ account, history, signUp, signIn, signUpPending, signInPending, onClose, onSignOut }: { account: { email?: string; isAnonymous?: boolean } | null | undefined; history: { title: string; slug: string; status: string; createdAt: number }[] | undefined; signUp: (credentials: { username: string; password: string }) => Promise<PasswordResult>; signIn: (credentials: { username: string; password: string }) => Promise<PasswordResult>; signUpPending: boolean; signInPending: boolean; onClose: () => void; onSignOut: () => void }) {
-  const [mode, setMode] = useState<"upgrade" | "signIn">(account?.isAnonymous ? "upgrade" : "signIn");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const pending = signUpPending || signInPending;
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); setError("");
-    const result = mode === "upgrade" ? await signUp({ username: email.trim().toLowerCase(), password }) : await signIn({ username: email.trim().toLowerCase(), password });
-    if (result.status === "complete") { setPassword(""); onClose(); return; }
-    setError(passwordError(result.userError));
-  };
-  return <div className="account-backdrop" role="presentation" onMouseDown={onClose}><section className="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-title" onMouseDown={event => event.stopPropagation()}><button className="dialog-close" aria-label="Close account" onClick={onClose}>×</button><p className="eyebrow">YOUR SLIDEX ACCOUNT</p><h2 id="account-title">{account?.isAnonymous ? "Save your presentations" : "Your presentations"}</h2>{account?.isAnonymous ? <p>You're using a private anonymous session. Create an account to keep this work and open it again on any device.</p> : <p>{account?.email ? `Signed in as ${account.email}.` : "Sign in to see your saved presentations."}</p>}<form onSubmit={submit}><label>Email<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required disabled={pending} /></label><label>Password<input type="password" autoComplete={mode === "upgrade" ? "new-password" : "current-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} required disabled={pending} /></label>{error && <p className="account-error" role="alert">{error}</p>}<button className="primary" disabled={pending}>{pending ? "Please wait…" : mode === "upgrade" ? "Create account & save work" : "Sign in"}</button></form><button className="account-switch" onClick={() => { setMode(mode === "upgrade" ? "signIn" : "upgrade"); setError(""); }}>{mode === "upgrade" ? "Already have an account? Sign in" : "New here? Create an account"}</button>{history && <div className="presentation-history"><h3>Presentation history</h3>{history.length ? history.map(item => <a key={item.slug} href={`/?room=${item.slug}`}><span>{item.title}</span><small>{item.status} · {new Date(item.createdAt).toLocaleDateString()}</small></a>) : <p>No presentations yet.</p>}</div>} {!account?.isAnonymous && <button className="account-signout" onClick={onSignOut}>Sign out</button>}</section></div>;
-}
-
-function passwordError(error?: { error: string; minimumLength?: number; retryAfterMs?: number }) {
-  if (!error) return "Something went wrong. Please try again.";
-  if (error.error === "USERNAME_TAKEN") return "An account already exists for this email. Sign in instead.";
-  if (error.error === "USER_NOT_FOUND") return "No account exists for this email.";
-  if (error.error === "INVALID_CREDENTIALS") return "Incorrect email or password.";
-  if (error.error === "PASSWORD_TOO_SHORT") return `Password must be at least ${error.minimumLength ?? 8} characters.`;
-  if (error.error === "RATE_LIMITED") return `Too many attempts. Try again in ${Math.ceil((error.retryAfterMs ?? 0) / 1000)} seconds.`;
-  return "Please check your details and try again.";
+  return <main className="launchpad"><div className="hero-grid"><div className="landing-top"><span className="eyebrow">{tr("SLIDEX / BETA")}</span><div className="landing-actions"><button className="account-link" onClick={onAccount}>{account?.isAnonymous ? tr("Guarda tu trabajo") : tr("Mis presentaciones")}{history?.length ? ` (${history.length})` : ""}</button><LanguagePicker /></div></div><h1>{tr("Tu próxima charla,")}<br /><em>{tr("viva.")}</em></h1><p>{tr("Una presentación que escucha. Tu audiencia propone, la web aporta y las mejores ideas llegan al escenario.")}</p><button disabled={busy} onClick={async () => { setBusy(true); try { await onCreate(); } finally { setBusy(false); } }}>{busy ? tr("Creando tu sala…") : tr("Crear una sala en vivo")} <span>↗</span></button>{notice && <p role="alert">{notice}</p>}<form className="join-form" onSubmit={event => { event.preventDefault(); window.location.assign(`?room=${encodeURIComponent(code.trim().toUpperCase().startsWith("LIVE-") ? code.trim().toUpperCase() : `LIVE-${code.trim().toUpperCase()}`)}`); }}><label htmlFor="room-code">{tr("¿Vienes como audiencia?")}</label><div><input id="room-code" required pattern="([Ll][Ii][Vv][Ee]-)?[A-Za-z0-9]{5}" maxLength={20} value={code} onChange={e => setCode(e.target.value)} placeholder={tr("Código LIVE-XXXXX")}/><button disabled={!code.trim()}>{tr("Unirme →")}</button></div></form><small>{tr("Convex · OpenAI · Firecrawl · AgentMail")}</small></div><div className="manifesto"><div className="signal">✦</div><p>{tr("“El último slide todavía no existe. Lo escribirá tu audiencia.”")}</p><div className="feature-list"><span>{tr("01 · Crea tu sala y comparte el enlace")}</span><span>{tr("02 · Presenta, escucha y acepta ideas")}</span><span>{tr("03 · Cierra con lo que descubrieron juntos")}</span></div></div></main>;
 }
 
 function countBy<T extends Record<string, unknown>>(items: T[], key: keyof T) {
