@@ -15,8 +15,18 @@ const iconPaths = [
   "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 4v6l4 3",
   "M3 3h6v6H3Zm12 0h6v6h-6ZM3 15h6v6H3Zm12 0h6v6h-6ZM9 6h6M6 9v6m12-6v6m-9 3h6",
 ];
-export function ServiceIcon({ index }: { index: number }) {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={iconPaths[index % iconPaths.length]} /></svg>;
+const componentIcons: Record<string, string> = {
+  agent: "M5 7h14v13H5ZM12 3v4M9 12h.01M15 12h.01M9 16h6M2 11v5m20-5v5",
+  workflow: "M3 3h6v6H3Zm12 12h6v6h-6ZM9 6h9v9m-3-3 3 3 3-3",
+  workpool: "M3 5h12M3 12h12M3 19h12m3-16 4 2-4 2m0 3 4 2-4 2m0 3 4 2-4 2",
+  rag: "M3 3h8v16H3Zm8 0h10v16H11ZM6 7h2M6 11h2m6-4h4m-4 4h4m-7 8v3",
+  "rate limiter": "M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6ZM8 12h8",
+  aggregate: "M4 20V10h4v10m4 0V4h4v16m4 0v-7h3v7",
+  resend: "M2 5h20v14H2Zm0 0 10 8L22 5",
+  stripe: "M2 4h20v16H2Zm0 5h20M6 15h4",
+};
+export function ServiceIcon({ index, title = "" }: { index: number; title?: string }) {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={componentIcons[title.toLowerCase()] ?? iconPaths[index % iconPaths.length]} /></svg>;
 }
 
 export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
@@ -36,7 +46,7 @@ export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
   if (slide.layout === "services") {
     const cards = slide.body.split("\n").map(line => line.trim()).filter(Boolean).slice(0, 8).map(line => { const [title, ...detail] = line.split("|"); return { title: title.trim(), detail: detail.join("|").trim() }; });
     return <div className="story-services"><div className="story-services-header"><div><span className="story-kicker">{tr("DE LA IDEA A PRODUCCIÓN")}</span><h1>{slide.title}</h1></div><img src={brand} alt="Convex" /></div>
-      <div className="story-services-grid">{cards.map((card, index) => <article className={`story-service tone-${index % 4}`} key={index}><div className="story-service-top"><span className="story-service-icon"><ServiceIcon index={index} /></span><small>{String(index+1).padStart(2,"0")}</small></div><h2>{card.title}</h2>{card.detail && <p>{card.detail}</p>}</article>)}</div>
+      <div className="story-services-grid">{cards.map((card, index) => <article className={`story-service tone-${index % 4}`} key={index}><div className="story-service-top"><span className="story-service-icon"><ServiceIcon index={index} title={card.title} /></span><small>{String(index+1).padStart(2,"0")}</small></div><h2>{card.title}</h2>{card.detail && <p>{card.detail}</p>}</article>)}</div>
       <div className="story-services-footer"><span>{tr("Todo conectado. Todo TypeScript.")}</span><a href="https://docs.convex.dev/understanding/overview" target="_blank" rel="noreferrer">{tr("Documentación oficial")} ↗</a></div>
     </div>;
   }

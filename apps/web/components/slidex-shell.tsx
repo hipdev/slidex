@@ -137,7 +137,7 @@ function Slidex() {
   const reactions = countBy(data.reactions.filter((reaction) => reaction.slideId === current?._id), "emoji");
   const votes = countBy(data.votes.filter((item) => item.slideId === current?._id), "choiceId");
   const totalVotes = Object.values(votes).reduce((sum, item) => sum + item, 0);
-  const isPoll = current?.kind === "poll";
+  const isPoll = current?.kind === "poll" && (!current.layout || current.layout === "standard");
   const isOpening = current?.kind === "title" && current._id === data.slides[0]?._id;
   const shareCode = data.presentation.joinCode ?? data.presentation.slug.replace(/^LIVE-/, "");
 
