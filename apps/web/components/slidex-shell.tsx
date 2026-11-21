@@ -124,6 +124,12 @@ function Slidex() {
   const isOpening = current?.kind === "title" && current._id === data.slides[0]?._id;
   const shareCode = data.presentation.joinCode ?? data.presentation.slug.replace(/^LIVE-/, "");
 
+  const enterPresentation = async () => {
+    setPresenting(true);
+    // Request inside the click's user activation, before any asynchronous work.
+    try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); }
+    catch { /* Keep the stage usable when fullscreen is unavailable or denied. */ }
+  };
   const exitPresentation = () => {
     setPresenting(false);
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -145,7 +151,7 @@ function Slidex() {
         <button className="share account-action" title={account?.email} onClick={() => setAccountOpen(true)}><span>{account?.isAnonymous ? tr("Guardar cuenta") : tr("Mi cuenta")}</span>{account?.email && <small className="account-email">{account.email}</small>}</button>
         {!data.isHost && <a className="share" href="#participation" onClick={() => { setPresenting(false); setPanel("room"); }}>{tr("Participar ↓")}</a>}
         <button className="share" onClick={() => setInviteOpen(true)}>{tr("Invitar a la sala")}</button>
-        <button className="share present-action" onClick={() => setPresenting(!presenting)}>{presenting ? tr("Salir del escenario") : tr("Presentar ⤢")}</button>
+        <button className="share present-action" onClick={() => presenting ? exitPresentation() : void enterPresentation()}>{presenting ? tr("Salir del escenario") : tr("Presentar ⤢")}</button>
       </div>
     </header>
     {data.isHost && <JDVoice key={data.presentation._id} presentationId={data.presentation._id} cue={data.presentation.jdCue} />}
@@ -171,7 +177,7 @@ function Slidex() {
       />
       <BookStage className={`stage ${current?.kind ?? "content"} ${isOpening ? "opening" : ""}`} slideId={data.presentation.showConclusions ? "conclusions" : current?._id} cue={data.presentation.jdCue}>
         <Countdown room={data.presentation} />
-        <div className="stage-meta"><span>{tr("SLIDE")} {String((current?.order ?? 0) + 1).padStart(2, "0")}</span><span>{current?.kind === "research" ? tr("✦ RESEARCH AGENT") : tr("● LIVE CANVAS")}</span></div>
+        <div className="stage-meta"><span>{tr("SLIDE")} {String((current?.order ?? 0) + 1).padStart(2, "0")}</span><span className="stage-status">{current?.kind === "research" ? tr("✦ RESEARCH AGENT") : <><i className={`live-indicator ${data.presentation.status === "live" ? "is-live" : ""}`} aria-hidden="true" />{tr(data.presentation.status === "live" ? "En vivo" : data.presentation.status === "ended" ? "Finalizada" : "Borrador").toUpperCase()}</>}</span></div>
         {data.presentation.showConclusions ? <ClosingWall presentationId={data.presentation._id} /> : <><div className="slide-copy" key={current?._id}><p className="accent-label">{current?.kind === "poll" ? tr("AUDIENCE TAKEOVER") : current?.kind === "research" ? tr("FRESHLY GENERATED") : tr("A REALTIME PRESENTATION SYSTEM")}</p><h1>{starterText(current?.title)}</h1>{current?.body && !(isOpening && isIntroParagraph(current.body)) && <p>{starterText(current.body)}</p>}</div>
         {data.isHost && current?._id === data.slides[0]?._id && !data.presentation.showConclusions && <JoinCard slug={shareCode} onExpand={() => setInviteOpen(true)} />}
         {current?.imageUrl && <figure className="slide-image"><img src={current.imageUrl} alt="Related visual" referrerPolicy="no-referrer" />{current.imageSourceUrl && <figcaption><a href={current.imageSourceUrl} target="_blank" rel="noreferrer">Image source ↗</a></figcaption>}</figure>}

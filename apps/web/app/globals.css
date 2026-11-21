@@ -631,3 +631,9 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
   .jd-dock.is-open > .jd-character { left:7px; width:72px; }
 }
 @media(prefers-reduced-motion:reduce) { .book-turn-viewport { display:none; } }
+
+.stage-status { display:inline-flex; align-items:center; gap:9px; }
+.live-indicator { position:relative; display:inline-block; flex:none; width:7px; height:7px; border-radius:50%; background:#876a60; }
+.live-indicator.is-live { background:#d52d30; }
+.live-indicator.is-live::after { content:""; position:absolute; inset:0; border:1px solid #d52d30; border-radius:50%; animation:live-recording 1.8s ease-out infinite; }
+@keyframes live-recording { from { transform:scale(1); opacity:.65; } 80%,to { transform:scale(2.8); opacity:0; } }
