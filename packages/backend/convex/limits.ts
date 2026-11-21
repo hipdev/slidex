@@ -5,4 +5,5 @@ export const limits = new RateLimiter(components.rateLimiter, {
   contributions: {kind:"token bucket",rate:12,period:MINUTE,capacity:5},
   reactions: {kind:"token bucket",rate:60,period:MINUTE,capacity:12},
   ai: {kind:"token bucket",rate:6,period:MINUTE,capacity:3},
+  jdVoice: {kind:"token bucket",rate:30,period:MINUTE,capacity:8},
 });

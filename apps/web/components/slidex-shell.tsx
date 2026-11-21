@@ -158,7 +158,7 @@ function Slidex() {
         }}
       />
       <section className={`stage ${current?.kind ?? "content"}`}>
-        <Countdown room={data.presentation} isHost={data.isHost} />
+        <Countdown room={data.presentation} />
         <div className="stage-meta"><span>{tr("SLIDE")} {String((current?.order ?? 0) + 1).padStart(2, "0")}</span><span>{current?.kind === "research" ? tr("✦ RESEARCH AGENT") : tr("● LIVE CANVAS")}</span></div>
         {data.presentation.showConclusions ? <ClosingWall presentationId={data.presentation._id} /> : <><div className="slide-copy" key={current?._id}><p className="accent-label">{current?.kind === "poll" ? tr("AUDIENCE TAKEOVER") : current?.kind === "research" ? tr("FRESHLY GENERATED") : tr("A REALTIME PRESENTATION SYSTEM")}</p><h1>{current?.title}</h1><p>{current?.body}</p></div>
         {data.isHost && current?._id === data.slides[0]?._id && !data.presentation.showConclusions && <JoinCard slug={slug} onExpand={() => setInviteOpen(true)} />}

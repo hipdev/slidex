@@ -319,5 +319,10 @@
   "Ampliar QR para la audiencia": "Enlarge audience QR code",
   "Esta charla también es tuya": "This talk is yours, too",
   "Escanea. Entra. Participa.": "Scan. Join. Participate.",
-  "Desde tu laptop, abre el enlace o entra al inicio y escribe el código.": "On your laptop, open the link or enter this code on the home page."
+  "Desde tu laptop, abre el enlace o entra al inicio y escribe el código.": "On your laptop, open the link or enter this code on the home page.",
+  "Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.": "Move forward or back, create slides and adjust the time with your voice.",
+  "Prueba: JD, siguiente slide. O: baja el contador 4 minutos.": "Try: JD, next slide. Or: reduce the countdown by 4 minutes.",
+  "JD, crea un slide sobre Convex": "JD, create a slide about Convex",
+  "La diapositiva cambió mientras creaba. Pídemela otra vez.": "The slide changed while I was creating. Ask me again.",
+  "El tiempo debe quedar entre cero y cuatro horas.": "The remaining time must be between zero and four hours."
 }

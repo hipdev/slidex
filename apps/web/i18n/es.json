@@ -319,5 +319,10 @@
   "Ampliar QR para la audiencia": "Ampliar QR para la audiencia",
   "Esta charla también es tuya": "Esta charla también es tuya",
   "Escanea. Entra. Participa.": "Escanea. Entra. Participa.",
-  "Desde tu laptop, abre el enlace o entra al inicio y escribe el código.": "Desde tu laptop, abre el enlace o entra al inicio y escribe el código."
+  "Desde tu laptop, abre el enlace o entra al inicio y escribe el código.": "Desde tu laptop, abre el enlace o entra al inicio y escribe el código.",
+  "Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.": "Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.",
+  "Prueba: JD, siguiente slide. O: baja el contador 4 minutos.": "Prueba: JD, siguiente slide. O: baja el contador 4 minutos.",
+  "JD, crea un slide sobre Convex": "JD, crea un slide sobre Convex",
+  "La diapositiva cambió mientras creaba. Pídemela otra vez.": "La diapositiva cambió mientras creaba. Pídemela otra vez.",
+  "El tiempo debe quedar entre cero y cuatro horas.": "El tiempo debe quedar entre cero y cuatro horas."
 }
