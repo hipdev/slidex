@@ -1,6 +1,7 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import spanish from "../i18n/es.json";
+import { CreatorLinks, SourceLink } from "./landing-links";
 
 type LaunchpadProps = {
   t?: (key: string) => string;
@@ -21,7 +22,7 @@ export function Launchpad({ t = staticText, ready = false, onCreate, notice = ""
   return <main className="launchpad">
     <div className="hero-grid">
       <div className="landing-top">
-        <span className="eyebrow">{t("SLIDEX / BETA")}</span>
+        <div className="landing-brand"><span className="eyebrow">{t("SLIDEX / BETA")}</span><SourceLink label={t("Código fuente")} /></div>
         <div className="landing-actions">
           <button className="account-link" onClick={onAccount} disabled={!onAccount}>
             {t("Mis presentaciones")}<span className="account-count">{history?.length ? ` (${history.length})` : ""}</span>
@@ -52,6 +53,7 @@ export function Launchpad({ t = staticText, ready = false, onCreate, notice = ""
         </div>
       </form>
       <small>{t("Convex · OpenAI · Firecrawl · AgentMail")}</small>
+      <CreatorLinks label={t("Creado por")} navigationLabel={t("Conecta con Julián")} />
     </div>
     <div className="manifesto">
       <div className="signal">✦</div>
