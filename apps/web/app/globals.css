@@ -511,16 +511,15 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .jd-panel form label { display:block; font-size:12px; margin:16px 0 8px; }
 .jd-panel form>div { display:flex; gap:7px; }
 .jd-panel form input { width:100%; min-width:0; border:1px solid #bfa18a; background:white; color:#38251e; border-radius:8px; padding:10px; font-size:16px; min-height:44px; }
-.jd-panel form button,.jd-presets button { min-height:44px; border:1px solid #bfa18a; border-radius:8px; padding:10px; color:#3d281f; background:#f4e6d3; font-size:12px; }
+.jd-panel form button { min-height:44px; border:1px solid #bfa18a; border-radius:8px; padding:10px; color:#3d281f; background:#f4e6d3; font-size:12px; }
 .jd-panel .jd-spoken { display:flex; gap:8px; align-items:center; font-size:12px; min-height:44px; }
 .jd-spoken input { width:18px; height:18px; accent-color:#9c5d30; }
 .jd-panel details { padding:10px 0; border-top:1px solid #d4baa3; }
 .jd-panel summary { cursor:pointer; min-height:30px; font-size:12px; }
-.jd-presets { display:flex; gap:8px; }
 .jd-privacy { display:block; font-size:10px; line-height:1.5; margin-top:10px; color:#795b48; }
 .jd-dock button:disabled { opacity:.55; cursor:wait; }
 .jd-dock button:focus-visible,.join-card button:focus-visible { outline:3px solid #a54d26; outline-offset:4px; }
-@media(hover:hover) { .jd-talk:hover,.jd-keyboard:hover { background:#63402c; } .jd-talk.recording:hover { background:#87251c; } .jd-presets button:hover { background:#f0d8ba; } }
+@media(hover:hover) { .jd-talk:hover,.jd-keyboard:hover { background:#63402c; } .jd-talk.recording:hover { background:#87251c; } }
 .presentation-mode .jd-dock { bottom:84px; }
 .host-view .workspace-panel { padding-bottom:100px; }
 .audience-view .navigator { display:none; }

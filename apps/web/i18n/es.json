@@ -303,16 +303,13 @@
   "JD, pausa el contador": "JD, pausa el contador",
   "Enviar": "Enviar",
   "Responder en voz alta": "Responder en voz alta",
-  "Contador rápido · sin micrófono": "Contador rápido · sin micrófono",
   "Solo se graba mientras escucho. El audio se procesa en Cloudflare; no se guarda en Slidex.": "Solo se graba mientras escucho. El audio se procesa en Cloudflare; no se guarda en Slidex.",
   "Terminar y enviar a JD": "Terminar y enviar a JD",
   "JD está pensando…": "JD está pensando…",
   "Hablar con JD": "Hablar con JD",
   "Escribir a JD": "Escribir a JD",
   "No escuché una voz. Intenta otra vez o escribe abajo.": "No escuché una voz. Intenta otra vez o escribe abajo.",
-  "JD no está disponible. Usa los controles rápidos del contador.": "JD no está disponible. Usa los controles rápidos del contador.",
   "Dame unos segundos antes del siguiente comando.": "Dame unos segundos antes del siguiente comando.",
-  "No pude procesarlo. Intenta de nuevo o usa el contador rápido.": "No pude procesarlo. Intenta de nuevo o usa el contador rápido.",
   "Tu navegador no permite grabar. Escribe el comando abajo.": "Tu navegador no permite grabar. Escribe el comando abajo.",
   "No se pudo grabar. Escribe el comando abajo.": "No se pudo grabar. Escribe el comando abajo.",
   "No pude acceder al micrófono. Revisa el permiso o escribe abajo.": "No pude acceder al micrófono. Revisa el permiso o escribe abajo.",
@@ -321,7 +318,6 @@
   "Escanea. Entra. Participa.": "Escanea. Entra. Participa.",
   "Desde tu laptop, abre el enlace o entra al inicio y escribe el código.": "Desde tu laptop, abre el enlace o entra al inicio y escribe el código.",
   "Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.": "Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.",
-  "Prueba: JD, siguiente slide. O: baja el contador 4 minutos.": "Prueba: JD, siguiente slide. O: baja el contador 4 minutos.",
   "JD, crea un slide sobre Convex": "JD, crea un slide sobre Convex",
   "La diapositiva cambió mientras creaba. Pídemela otra vez.": "La diapositiva cambió mientras creaba. Pídemela otra vez.",
   "El tiempo debe quedar entre cero y cuatro horas.": "El tiempo debe quedar entre cero y cuatro horas.",
@@ -383,5 +379,7 @@
   "Pasando página": "Pasando página",
   "Tu copiloto": "Tu copiloto",
   "Mostrar controles": "Mostrar controles",
-  "Ocultar controles": "Ocultar controles"
+  "Ocultar controles": "Ocultar controles",
+  "JD no está disponible en este momento.": "JD no está disponible en este momento.",
+  "No pude procesarlo. Intenta de nuevo.": "No pude procesarlo. Intenta de nuevo."
 }

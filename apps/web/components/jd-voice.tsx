@@ -1,6 +1,6 @@
 "use client";
 
-import { useAction, useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api } from "@slidex/backend/api";
 import type { Id } from "@slidex/backend/data-model";
@@ -10,7 +10,6 @@ import { tr, useLocale } from "../i18n/provider";
 
 export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentations">; cue?: JDCue }) {
   const talk = useAction(api.jd.talk);
-  const control = useMutation(api.jd.control);
   const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<"idle" | "permission" | "recording" | "thinking">("idle");
@@ -56,7 +55,7 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
   };
   const showError = (caught: unknown) => {
     const message = caught instanceof Error ? caught.message : String(caught);
-    setError(tr(/JD_SLIDE_CHANGED/.test(message) ? "La diapositiva cambió mientras creaba. Pídemela otra vez." : /50 slide/.test(message) ? "Máximo de 50 slides" : /JD_INVALID_DURATION/.test(message) ? "El tiempo debe quedar entre cero y cuatro horas." : /JD_NO_SPEECH/.test(message) ? "No escuché una voz. Intenta otra vez o escribe abajo." : /JD_NOT_CONFIGURED/.test(message) ? "JD no está disponible. Usa los controles rápidos del contador." : /rate|limit/i.test(message) ? "Dame unos segundos antes del siguiente comando." : "No pude procesarlo. Intenta de nuevo o usa el contador rápido."));
+    setError(tr(/JD_SLIDE_CHANGED/.test(message) ? "La diapositiva cambió mientras creaba. Pídemela otra vez." : /50 slide/.test(message) ? "Máximo de 50 slides" : /JD_INVALID_DURATION/.test(message) ? "El tiempo debe quedar entre cero y cuatro horas." : /JD_NO_SPEECH/.test(message) ? "No escuché una voz. Intenta otra vez o escribe abajo." : /JD_NOT_CONFIGURED/.test(message) ? "JD no está disponible en este momento." : /rate|limit/i.test(message) ? "Dame unos segundos antes del siguiente comando." : "No pude procesarlo. Intenta de nuevo."));
   };
   const send = async (payload: { text: string } | { audio: ArrayBuffer; mime: string }) => {
     setPhase("thinking"); setError("");
@@ -113,18 +112,13 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
     {open && <section id="jd-panel" className="jd-panel" role="region" aria-label={tr("JD, tu copiloto de voz")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); close(); } }}>
       <header><div><strong>{tr("JD, tu copiloto de voz")}</strong><small>{tr("Tú hablas. La sala responde.")}</small></div><button disabled={busy} className="jd-close" aria-label={tr("Cerrar JD")} onClick={close}>×</button></header>
       <p>{tr("Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.")}</p>
-      <p className="jd-examples">{tr("Prueba: JD, siguiente slide. O: baja el contador 4 minutos.")}</p>
       <div className={`jd-listening ${phase}`} role="status">{tr(phase === "recording" ? "Te escucho… pulsa de nuevo para terminar (máx. 30 s)" : phase === "thinking" ? "JD está preparando la respuesta…" : phase === "permission" ? "Esperando permiso del micrófono…" : "Un clic para hablar. Otro para terminar.")}</div>
       {transcript && <blockquote>{transcript}</blockquote>}
       {reply && <p className="jd-reply" role="status">{reply}</p>}
       {error && <p className="jd-error" role="alert">{error}</p>}
       <form onSubmit={submit}><label htmlFor="jd-command">{tr("También puedes escribirle")}</label><div><input ref={input} id="jd-command" value={text} onChange={event => setText(event.target.value)} maxLength={1000} placeholder={tr("JD, crea un slide sobre Convex")} disabled={phase !== "idle"} /><button type="submit" disabled={phase !== "idle" || !text.trim()}>{tr("Enviar")}</button></div></form>
       <label className="jd-spoken"><input type="checkbox" checked={spoken} onChange={event => { setSpoken(event.target.checked); if (!event.target.checked) { speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel(); } }} />{tr("Responder en voz alta")}</label>
-      <details><summary>{tr("Contador rápido · sin micrófono")}</summary><div className="jd-presets">{[15, 30, 45].map(minutes => <button key={minutes} disabled={phase !== "idle"} onClick={async () => {
-        setPhase("thinking"); setError("");
-        try { const message = await control({ presentationId, operation: "set", seconds: minutes * 60, locale }); if (mounted.current) { setReply(message); speak(message); } }
-        catch (caught) { if (mounted.current) showError(caught); } finally { if (mounted.current) setPhase("idle"); }
-      }}>{minutes} min</button>)}</div></details>
+
       <small className="jd-privacy">{tr("Solo se graba mientras escucho. El audio se procesa en Cloudflare; no se guarda en Slidex.")}</small>
     </section>}
     <div className="jd-buttons"><button ref={button} className={`jd-talk ${phase === "recording" ? "recording" : ""}`} disabled={busy} aria-controls={open ? "jd-panel" : undefined} aria-expanded={open} onClick={() => phase === "recording" ? stop() : void start()}><span aria-hidden="true">{phase === "recording" ? "■" : "✦"}</span>{tr(phase === "recording" ? "Terminar y enviar a JD" : busy ? "JD está pensando…" : "Hablar con JD")}</button><button className="jd-keyboard" aria-label={tr("Escribir a JD")} aria-expanded={open} onClick={() => { setOpen(true); setTimeout(() => input.current?.focus(), 0); }}>⌨</button></div>

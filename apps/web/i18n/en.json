@@ -303,16 +303,13 @@
   "JD, pausa el contador": "JD, pause the countdown",
   "Enviar": "Send",
   "Responder en voz alta": "Reply out loud",
-  "Contador rápido · sin micrófono": "Quick countdown · no microphone",
   "Solo se graba mientras escucho. El audio se procesa en Cloudflare; no se guarda en Slidex.": "Recording only while listening. Audio is processed by Cloudflare; Slidex does not store it.",
   "Terminar y enviar a JD": "Finish and send to JD",
   "JD está pensando…": "JD is thinking…",
   "Hablar con JD": "Talk to JD",
   "Escribir a JD": "Type to JD",
   "No escuché una voz. Intenta otra vez o escribe abajo.": "I didn’t hear a voice. Try again or type below.",
-  "JD no está disponible. Usa los controles rápidos del contador.": "JD is unavailable. Use the quick countdown controls.",
   "Dame unos segundos antes del siguiente comando.": "Give me a few seconds before the next command.",
-  "No pude procesarlo. Intenta de nuevo o usa el contador rápido.": "I couldn’t process that. Try again or use the quick countdown.",
   "Tu navegador no permite grabar. Escribe el comando abajo.": "Your browser can’t record audio. Type your command below.",
   "No se pudo grabar. Escribe el comando abajo.": "Couldn’t record. Type your command below.",
   "No pude acceder al micrófono. Revisa el permiso o escribe abajo.": "Couldn’t access the microphone. Check permission or type below.",
@@ -321,7 +318,6 @@
   "Escanea. Entra. Participa.": "Scan. Join. Participate.",
   "Desde tu laptop, abre el enlace o entra al inicio y escribe el código.": "On your laptop, open the link or enter this code on the home page.",
   "Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.": "Move forward or back, create slides and adjust the time with your voice.",
-  "Prueba: JD, siguiente slide. O: baja el contador 4 minutos.": "Try: JD, next slide. Or: reduce the countdown by 4 minutes.",
   "JD, crea un slide sobre Convex": "JD, create a slide about Convex",
   "La diapositiva cambió mientras creaba. Pídemela otra vez.": "The slide changed while I was creating. Ask me again.",
   "El tiempo debe quedar entre cero y cuatro horas.": "The remaining time must be between zero and four hours.",
@@ -383,5 +379,7 @@
   "Pasando página": "Turning the page",
   "Tu copiloto": "Your copilot",
   "Mostrar controles": "Show controls",
-  "Ocultar controles": "Hide controls"
+  "Ocultar controles": "Hide controls",
+  "JD no está disponible en este momento.": "JD is unavailable right now.",
+  "No pude procesarlo. Intenta de nuevo.": "I couldn’t process that. Try again."
 }

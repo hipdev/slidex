@@ -110,7 +110,7 @@ Los endpoints HTTPS son `/v1/transcriptions` (audio multipart) y `/v1/generate`
 (interpretación estructurada, feature `voice-interpretation`). Solo el propietario
 puede enviar comandos, con comprobación de permisos antes de llamar al proveedor
 y al aplicar el cambio. El audio se limita a 30 segundos en el cliente y 512 KB
-en el backend; Slidex no lo persiste. JD ofrece voz, texto y presets sin proveedor.
+en el backend; Slidex no lo persiste. JD ofrece comandos por voz y texto.
 
 El contador comparte una fecha de finalización del servidor, no escribe cada
 segundo. Todos los clientes reciben sus cambios con `useQuery`, muestrean el reloj
