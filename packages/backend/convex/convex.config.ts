@@ -11,6 +11,8 @@ const app = defineApp({ env: {
   CLOUDFLARE_TRANSCRIPTION_API_TOKEN: v.optional(v.string()),
   CLOUDFLARE_AI_API_URL: v.optional(v.string()),
   CLOUDFLARE_AI_API_TOKEN: v.optional(v.string()),
+  JD_VOICE_PRIVATE_KEY: v.optional(v.string()),
+  JD_VOICE_API_URL: v.optional(v.string()),
   RESEND_API_KEY: v.optional(v.string()),
   RESEND_FROM: v.optional(v.string()),
   EMAIL_OTP_SECRET: v.optional(v.string()),

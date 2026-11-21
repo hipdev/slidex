@@ -35,6 +35,8 @@ type Env = {
   readonly CLOUDFLARE_TRANSCRIPTION_API_TOKEN: string | undefined;
   readonly CLOUDFLARE_TRANSCRIPTION_API_URL: string | undefined;
   readonly EMAIL_OTP_SECRET: string | undefined;
+  readonly JD_VOICE_API_URL: string | undefined;
+  readonly JD_VOICE_PRIVATE_KEY: string | undefined;
   readonly RESEND_API_KEY: string | undefined;
   readonly RESEND_FROM: string | undefined;
 };

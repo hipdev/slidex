@@ -150,13 +150,24 @@ tarde conserva el estado. Solo el host puede iniciar, ajustar, pausar, continuar
 o quitarlo. El reloj se muestra como dígitos en la esquina superior derecha de
 la diapositiva, sin caja ni botones; los cambios se piden a JD.
 
-JD también avanza o retrocede **una** diapositiva y genera una nueva con el tema
-dictado. La nueva diapositiva se inserta después de la actual y queda seleccionada
-en una única transacción, respetando el límite de 50 slides. La generación usa
-el mismo Worker de Cloudflare y valida título y cuerpo; si otra sesión cambia
-la diapositiva durante la generación, el cambio se rechaza para evitar publicar
-en un lugar inesperado. Navegación y comandos tienen un presupuesto separado
-de la generación para permitir dirigir la charla sin agotar el límite de slides IA.
+JD avanza o retrocede **una** diapositiva y ajusta el contador. La creación de slides
+por JD está desactivada en el intérprete y en las operaciones del backend. La creación
+manual y el agente del estudio siguen disponibles.
+
+Las preguntas sobre «cómo me siento cuando veo los costos/facturación de Convex»
+disparan `jdReaction` durante **10 segundos**, con un deadline compartido. Un camino
+rápido reconoce las frases habituales; el intérprete admite paráfrasis. No se modifica
+la diapositiva, el contador ni su posición. Los clientes precargan el GIF suministrado,
+usan el reloj del servidor y descartan reacciones vencidas al recargar o volver a una
+pestaña. La capa no captura foco ni clics. El movimiento reducido muestra texto estático.
+
+La voz natural usa `workers/jd-voice`, con Aura 2 español (`alvaro`) e inglés (`orion`).
+Convex solo sintetiza la última respuesta confirmada del propietario, con límites
+separados. `JD_VOICE_PRIVATE_KEY` (JWK P-256) permanece en Convex; el Worker tiene
+únicamente la clave pública de verificación. `JD_VOICE_API_URL` apunta al Worker.
+Las peticiones firmadas caducan en 15 segundos. El audio no se persiste, se limita a
+512 KB y se libera al terminar, cerrar JD, colapsarlo o empezar otra orden. Si falla,
+se usa la voz del navegador. La UI identifica la voz generada por IA.
 
 `JD, baja el contador 4 minutos porque voy tarde` resta 240 segundos al tiempo
 **restante** sin reiniciar el reloj. `Suma dos minutos` añade 120 segundos;

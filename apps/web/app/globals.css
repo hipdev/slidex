@@ -484,6 +484,9 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .countdown-digits { display:block; font:500 clamp(26px,2.8vw,40px)/1 'DM Mono',monospace; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
 .countdown.urgent { color:#a34500; }
 .countdown.finished { color:#972c21; }
+.stage.design-photo .countdown,.stage.design-cache .countdown,.stage.design-architecture .countdown,.stage.design-demo .countdown { color:#fff8eb; text-shadow:0 2px 8px #000b; }
+.stage.design-photo .countdown.urgent,.stage.design-cache .countdown.urgent,.stage.design-architecture .countdown.urgent,.stage.design-demo .countdown.urgent { color:#ffcf7f; }
+.stage.design-photo .countdown.finished,.stage.design-cache .countdown.finished,.stage.design-architecture .countdown.finished,.stage.design-demo .countdown.finished { color:#ffaea3; }
 .stage:has(.countdown) .stage-meta { min-height:32px; align-items:center; padding-right:115px; }
 .join-card { display:flex; align-items:center; gap:24px; margin:22px 0; padding:20px; border:1px solid #bd9274; border-radius:16px; background:#fffaf4; }
 .join-card-qr { flex:none; padding:0; border:0; border-radius:10px; overflow:hidden; background:white; line-height:0; }
@@ -954,6 +957,15 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .thinking-systems .thinking-copy>.story-kicker { color:#9dddd4; }.thinking-systems .thinking-copy>p { color:#b6d1d4; }
 .thinking-systems .thinking-cards article { background:#19333c; border-color:#618692; }.thinking-systems .thinking-cards article>span { color:#9dddd4; }.thinking-systems .thinking-cards p,.thinking-systems .thinking-footer { color:#c3d8da; }.thinking-systems .thinking-footer b { color:#ccecbd; }
 .thinking-wire { animation:thinking-flow 12s linear infinite; }@keyframes thinking-flow { to { stroke-dashoffset:-180; } }
+.jd-reaction-overlay { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:26px; pointer-events:none; background:#18121ab3; backdrop-filter:blur(7px); animation:jd-reaction-window var(--jd-reaction-duration,10s) linear both; }
+.jd-reaction-card { width:min(780px,88vw); margin:0; padding:18px; border:1px solid #f0cb9d; border-radius:26px; background:#fff9ec; color:#39271e; box-shadow:0 24px 100px #0006; }
+.jd-reaction-card>span { display:block; margin:0 0 12px; font:600 12px 'DM Mono',monospace; letter-spacing:.13em; color:#805230; }
+.jd-reaction-card img { display:block; width:100%; max-height:68dvh; object-fit:contain; border-radius:14px; background:#302327; }
+.jd-reaction-card figcaption { font-size:clamp(18px,2vw,30px); font-weight:650; margin:16px 4px 2px; letter-spacing:-.025em; }
+.jd-reaction-still { display:none; }
+@keyframes jd-reaction-window { 0% { opacity:0; transform:translateY(10px) scale(.985); } 4%,96% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:translateY(-5px) scale(.99); } }
+@media(max-width:680px) { .jd-reaction-overlay { padding:14px; }.jd-reaction-card { width:100%; padding:12px; border-radius:20px; }.jd-reaction-card>span { font-size:10px; }.jd-reaction-card figcaption { font-size:20px; } }
+@media(prefers-reduced-motion:reduce) { .jd-reaction-overlay { animation:none; }.jd-reaction-card img { display:none; }.jd-reaction-still { display:block; font-size:42px; font-weight:700; } }
 @media(prefers-reduced-motion:reduce) { .thinking-wire { animation:none; } }
 @media(max-width:680px) { .thinking-grid { grid-template-columns:1fr; gap:14px; margin:20px 0 24px; }.thinking-copy h1 { font-size:42px; margin:18px 0; }.thinking-copy>p { font-size:19px; }.thinking-cards { grid-template-columns:1fr; gap:12px; }.thinking-cards article { padding:20px; }.thinking-cards h2 { font-size:26px; margin:10px 0; }.thinking-cards p { font-size:19px; }.thinking-footer { flex-direction:column; gap:14px; font-size:14px; line-height:1.5; } }
 @media(max-width:680px) { .story-demo { grid-template-columns:1fr; gap:40px; padding:14px 0; }.demo-quote { font-size:32px; margin-top:24px; }.demo-copy h1 { font-size:44px; }.demo-subtitle { font-size:20px; margin:18px 0 26px; }.demo-stack { font-size:16px; padding-top:20px; }.demo-meme { width:92%; max-width:340px; transform:none; }.demo-sticker { font-size:11px; }.demo-meme figcaption { font-size:10px; } }

@@ -16,6 +16,7 @@ import type * as interventions from "../interventions.js";
 import type * as jd from "../jd.js";
 import type * as language from "../language.js";
 import type * as lib_emailSecurity from "../lib/emailSecurity.js";
+import type * as lib_jd_reactions from "../lib/jd_reactions.js";
 import type * as limits from "../limits.js";
 import type * as live from "../live.js";
 import type * as moments from "../moments.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   jd: typeof jd;
   language: typeof language;
   "lib/emailSecurity": typeof lib_emailSecurity;
+  "lib/jd_reactions": typeof lib_jd_reactions;
   limits: typeof limits;
   live: typeof live;
   moments: typeof moments;

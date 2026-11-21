@@ -18,6 +18,7 @@ import { AccountDialog } from "./account-dialog";
 import { Countdown } from "./countdown";
 import { JDVoice } from "./jd-voice";
 import { JDCharacter } from "./jd-character";
+import { JDReaction } from "./jd-reaction";
 import { RoomJoinForm } from "./room-join-form";
 import { PresentationTitle } from "./presentation-title";
 import { DesignedSlide } from "./designed-slide";
@@ -173,6 +174,7 @@ function Slidex() {
     </header>
     {data.isHost && <JDVoice key={data.presentation._id} presentationId={data.presentation._id} cue={data.presentation.jdCue} />}
     {!data.isHost && <JDCharacter key={data.presentation._id} cue={data.presentation.jdCue} audience />}
+    <JDReaction key={`reaction:${data.presentation._id}`} reaction={data.presentation.jdReaction} />
     {data.isHost && !presenting && current && <InterventionCue slideId={current._id} onReview={() => { setPresenting(false); setPanel("twists"); }} />}
     {copyNotice && <div className="copy-toast" role="status"><span>✓ {tr("Enlace copiado; compártelo para invitar a la sala")}</span><button aria-label={tr("Cerrar aviso")} onClick={() => setCopyNotice(false)}>×</button></div>}
     {notice && <div className="notice" role="status">{notice}<button aria-label={tr("Cerrar aviso")} onClick={() => setNotice("")}>×</button></div>}

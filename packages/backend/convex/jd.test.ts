@@ -5,8 +5,87 @@ import { registerCore, sessionIdentity } from "@convex-dev/auth/test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
+import { isConvexCostsReaction } from "./lib/jd_reactions";
 
 const modules = import.meta.glob("./**/*.ts");
+
+test("billing reaction recognizes conversational Spanish without stealing normal commands", () => {
+  for (const phrase of ["Hey JD, cómo me siento yo cuando veo los costos de Convex", "Hey JD, cómo me siento cuando veo la facturación de mis proyectos alojados en Convex", "JD, mi reacción al ver los precios de Convex", "JD, cómo reacciono cuando veo lo que pago por Convex"]) expect(isConvexCostsReaction(phrase)).toBe(true);
+  for (const phrase of ["No muestres cómo me siento cuando veo costos de Convex", "Cuánto cuesta Convex", "Cómo me siento cuando veo costos de otro servicio", "Crea un slide de cómo me siento con los costos de Convex", "Cómo me siento con Convex y baja el contador 4 minutos"]) expect(isConvexCostsReaction(phrase)).toBe(false);
+});
+
+test("billing reaction is owner-only, shared for ten seconds, deduplicated and leaves the deck and timer intact", async () => {
+  const { host, guest, room } = await fixture();
+  const start = Date.now();
+  const now = vi.spyOn(Date, "now").mockReturnValue(start);
+  const fetch = vi.spyOn(globalThis, "fetch");
+  const command = { presentationId: room.presentationId, requestId: "billing-once", locale: "es" as const, text: "Hey JD, cómo me siento cuando veo la facturación de mis proyectos alojados en Convex" };
+  try {
+    await host.mutation(api.jd.control, { presentationId: room.presentationId, operation: "set", seconds: 1800, locale: "es" });
+    const before = (await guest.query(api.presentations.getBySlug, { slug: room.slug }))!;
+    await expect(guest.action(api.jd.talk, command)).rejects.toThrow("Only the presentation host");
+    await host.action(api.jd.talk, command);
+    const after = (await guest.query(api.presentations.getBySlug, { slug: room.slug }))!;
+    expect(after.presentation.jdReaction?.kind).toBe("convex_costs");
+    expect(after.presentation.jdReaction!.endsAt - after.presentation.jdReaction!.startedAt).toBe(10_000);
+    expect(after.presentation.currentSlideId).toBe(before.presentation.currentSlideId);
+    expect(after.slides).toEqual(before.slides);
+    expect(after.presentation.countdown).toEqual(before.presentation.countdown);
+    expect(after.presentation.jdCue).toEqual(before.presentation.jdCue);
+    now.mockReturnValue(start + 3000);
+    await host.action(api.jd.talk, command);
+    expect((await guest.query(api.presentations.getBySlug, { slug: room.slug }))!.presentation.jdReaction).toEqual(after.presentation.jdReaction);
+    await host.action(api.jd.talk, { ...command, requestId: "billing-again" });
+    const repeated = (await guest.query(api.presentations.getBySlug, { slug: room.slug }))!.presentation.jdReaction!;
+    expect(repeated.endsAt - repeated.startedAt).toBe(10_000);
+    expect(repeated.requestId).toBe("billing-again");
+    expect(fetch).not.toHaveBeenCalled();
+  } finally { now.mockRestore(); fetch.mockRestore(); }
+});
+
+test("spoken billing cue uses transcription and triggers the same reaction without a model round trip", async () => {
+  const { host, guest, room } = await fixture();
+  vi.stubEnv("CLOUDFLARE_TRANSCRIPTION_API_URL", "https://transcribe.example.test");
+  vi.stubEnv("CLOUDFLARE_TRANSCRIPTION_API_TOKEN", "test-only");
+  const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ success: true, transcription: { text: "Hey JD, cómo me siento yo cuando veo los costos de Convex", durationSeconds: 4 } }), { status: 200 }));
+  try {
+    const result = await host.action(api.jd.talk, { presentationId: room.presentationId, requestId: "spoken-bill", locale: "es", audio: new Uint8Array(200).buffer, mime: "audio/webm" });
+    expect(result.changed).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect((await guest.query(api.presentations.getBySlug, { slug: room.slug }))!.presentation.jdReaction?.kind).toBe("convex_costs");
+  } finally { fetch.mockRestore(); vi.unstubAllEnvs(); }
+});
+
+test("JD cannot create slides even if the interpreter returns the former creation operation", async () => {
+  const { host, room } = await fixture();
+  const before = (await host.query(api.presentations.getBySlug, { slug: room.slug }))!;
+  vi.stubEnv("CLOUDFLARE_AI_API_URL", "https://ai.example.test"); vi.stubEnv("CLOUDFLARE_AI_API_TOKEN", "test-only");
+  const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ output: { operation: "create_slide", seconds: null, prompt: "Pricing y Costos" } }), { status: 200 }));
+  try {
+    await expect(host.action(api.jd.talk, { presentationId: room.presentationId, requestId: "no-creation", locale: "es", text: "Crea un slide de los costos de Convex" })).rejects.toThrow("JD_INTERPRETATION_FAILED");
+    const after = (await host.query(api.presentations.getBySlug, { slug: room.slug }))!;
+    expect(after.slides).toEqual(before.slides);
+    expect(after.presentation.currentSlideId).toBe(before.presentation.currentSlideId);
+  } finally { fetch.mockRestore(); vi.unstubAllEnvs(); }
+});
+
+test("natural speech is restricted to the owner's last server-committed reply", async () => {
+  const { host, guest, room } = await fixture();
+  const command = { presentationId: room.presentationId, requestId: "speak-last", locale: "es" as const };
+  await host.mutation(internal.jd.applyCommand, { ...command, operation: "convex_costs" });
+  await expect(guest.action(api.jd.voiceReply, command)).rejects.toThrow("Only the presentation host");
+  await expect(host.action(api.jd.voiceReply, { ...command, requestId: "different" })).rejects.toThrow("JD_STALE_REPLY");
+  const pair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  vi.stubEnv("JD_VOICE_PRIVATE_KEY", JSON.stringify(await crypto.subtle.exportKey("jwk", pair.privateKey)));
+  vi.stubEnv("JD_VOICE_API_URL", "https://voice.example.test");
+  const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(new Uint8Array([1,2,3]), { headers: { "content-type": "audio/mpeg" } }));
+  try {
+    expect(new Uint8Array((await host.action(api.jd.voiceReply, command))!)).toEqual(new Uint8Array([1,2,3]));
+    const body = JSON.parse(fetch.mock.calls[0][1]!.body as string);
+    expect(JSON.parse(body.payload).text).toBe("Así, tal cual.");
+    expect(await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, pair.publicKey, Uint8Array.from(atob(body.signature), c=>c.charCodeAt(0)), new TextEncoder().encode(body.payload))).toBe(true);
+  } finally { fetch.mockRestore(); vi.unstubAllEnvs(); }
+});
 async function fixture() {
   const t = convexTest(schema, modules);
   registerCore(t); rateLimiterTest.register(t);
@@ -131,27 +210,7 @@ test("JD navigation is host-only, bounded by the deck and does not replay a comp
   expect((await guest.query(api.presentations.getBySlug, { slug: room.slug }))!.presentation.currentSlideId).toBe(before.slides[2]._id);
 });
 
-test("creating a slide inserts and selects it atomically, while guarding stale context, validation and deck limits", async () => {
-  const { t, host, guest, room } = await fixture();
-  const before = (await host.query(api.presentations.getBySlug, { slug: room.slug }))!;
-  const command = { presentationId: room.presentationId, operation: "create_slide" as const, locale: "es" as const, requestId: "slide-once", expectedSlideId: before.slides[0]._id, slide: { title: "Convex reactivo", body: "Un cambio en el backend llega a toda la audiencia." } };
-  await expect(guest.mutation(internal.jd.applyCommand, command)).rejects.toThrow("Only the presentation host");
-  await host.mutation(internal.jd.applyCommand, command);
-  await host.mutation(internal.jd.applyCommand, command);
-  const after = (await guest.query(api.presentations.getBySlug, { slug: room.slug }))!;
-  expect(after.slides.map(slide => slide.order)).toEqual([0, 1, 2, 3]);
-  expect(after.slides[1]).toMatchObject(command.slide);
-  expect(after.presentation.currentSlideId).toBe(after.slides[1]._id);
-  expect(after.slides[2]._id).toBe(before.slides[1]._id);
-  await expect(host.mutation(internal.jd.applyCommand, { ...command, requestId: "stale" })).rejects.toThrow("JD_SLIDE_CHANGED");
-  await expect(host.mutation(internal.jd.applyCommand, { ...command, requestId: "invalid", slide: { title: "", body: "" } })).rejects.toThrow("JD_INVALID_SLIDE");
-  await t.run(async ctx => {
-    for (let order = 4; order < 50; order++) await ctx.db.insert("slides", { presentationId: room.presentationId, order, kind: "content", title: "Filler", body: "For the deck limit test" });
-  });
-  await expect(host.mutation(internal.jd.applyCommand, { ...command, requestId: "full", expectedSlideId: after.slides[1]._id })).rejects.toThrow("50 slide limit");
-});
-
-test("the full voice action interprets relative time, navigation and slide generation without publishing anything", async () => {
+test("the full voice action interprets relative time and navigation without publishing anything", async () => {
   const { host, guest, room } = await fixture();
   vi.stubEnv("CLOUDFLARE_AI_API_URL", "https://ai.example.test");
   vi.stubEnv("CLOUDFLARE_AI_API_TOKEN", "test-only");
@@ -167,13 +226,6 @@ test("the full voice action interprets relative time, navigation and slide gener
     answer({ operation: "next", seconds: null, prompt: null });
     await talk("JD, siguiente slide");
     expect((await guest.query(api.presentations.getBySlug, { slug: room.slug }))!.presentation.currentSlideId).toBe(adjusted.slides[1]._id);
-    answer({ operation: "create_slide", seconds: null, prompt: "Explica Convex reactivo con un ejemplo" });
-    answer({ title: "Todos vemos el mismo cambio", body: "El host ajusta el contador. Convex actualiza cada pantalla conectada." });
-    const result = await talk("JD, crea un slide explicando Convex reactivo con un ejemplo");
-    expect(result.changed).toBe(true);
-    const created = (await guest.query(api.presentations.getBySlug, { slug: room.slug }))!;
-    expect(created.slides[2].title).toBe("Todos vemos el mismo cambio");
-    expect(created.presentation.currentSlideId).toBe(created.slides[2]._id);
   } finally { fetch.mockRestore(); vi.unstubAllEnvs(); }
 });
 
@@ -199,9 +251,5 @@ test("committed JD gestures are reactive, atomic, deduplicated and absent for fa
   const timed = await read();
   expect(timed.presentation.jdCue).toMatchObject({ sequence:3, kind:"timer", deltaSeconds:-240 });
   expect(timed.presentation.countdown!.durationSeconds).toBe(1560);
-  await expect(host.mutation(internal.jd.applyCommand, { ...command, operation:"create_slide", requestId:"bad-slide", slide:{title:"",body:""} })).rejects.toThrow();
   expect((await read()).presentation.jdCue).toEqual(timed.presentation.jdCue);
-  await host.mutation(internal.jd.applyCommand, { ...command, operation:"create_slide", requestId:"new-page", expectedSlideId:timed.presentation.currentSlideId, slide:{title:"Una página nueva",body:"Creada por JD"} });
-  const created = await read();
-  expect(created.presentation.jdCue).toMatchObject({ sequence:4, kind:"create_slide", slideId:created.presentation.currentSlideId });
 });

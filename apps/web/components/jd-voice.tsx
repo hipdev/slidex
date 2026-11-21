@@ -10,6 +10,7 @@ import { tr, useLocale } from "../i18n/provider";
 
 export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentations">; cue?: JDCue }) {
   const talk = useAction(api.jd.talk);
+  const voiceReply = useAction(api.jd.voiceReply);
   const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -23,6 +24,7 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
   const [error, setError] = useState("");
   const [speaking, setSpeaking] = useState(false);
   const speechGeneration = useRef(0);
+  const audioReply = useRef<{ player: HTMLAudioElement; url: string } | null>(null);
   const [spoken, setSpoken] = useState(true);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -32,6 +34,12 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
   const button = useRef<HTMLButtonElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const busy = phase === "thinking" || phase === "permission";
+
+  function stopSpeech() {
+    speechGeneration.current++;
+    if (audioReply.current) { audioReply.current.player.pause(); audioReply.current.player.onended = null; audioReply.current.player.onerror = null; URL.revokeObjectURL(audioReply.current.url); audioReply.current = null; }
+    window.speechSynthesis?.cancel();
+  }
 
   function release() {
     if (timeout.current) clearTimeout(timeout.current);
@@ -53,19 +61,39 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
     mounted.current = true;
     return () => {
       mounted.current = false;
-      discardRecording(); window.speechSynthesis?.cancel();
+      discardRecording(); stopSpeech();
     };
   }, []);
-  const speak = (message: string) => {
-    if (!spoken || collapsedRef.current || !window.speechSynthesis) return;
-    const token = ++speechGeneration.current;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(message);
-    utterance.lang = locale === "es" ? "es-CO" : "en-US";
-    utterance.onstart = () => { if (mounted.current && speechGeneration.current === token) setSpeaking(true); };
-    const finish = () => { if (mounted.current && speechGeneration.current === token) setSpeaking(false); };
-    utterance.onend = finish; utterance.onerror = finish;
-    window.speechSynthesis.speak(utterance);
+  const speak = async (message: string, requestId: string) => {
+    if (!spoken || collapsedRef.current) return;
+    stopSpeech();
+    const token = speechGeneration.current;
+    const valid = () => mounted.current && speechGeneration.current === token && !collapsedRef.current;
+    const fallback = () => {
+      if (!valid() || !window.speechSynthesis || typeof SpeechSynthesisUtterance === "undefined") return;
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = locale === "es" ? "es-CO" : "en-US";
+      const voices = window.speechSynthesis.getVoices();
+      const voice = voices.find(v => v.lang === utterance.lang) ?? voices.find(v => v.lang.startsWith(locale));
+      if (voice) utterance.voice = voice;
+      utterance.rate = .98;
+      utterance.onstart = () => { if (valid()) setSpeaking(true); };
+      utterance.onend = utterance.onerror = () => { if (valid()) setSpeaking(false); };
+      window.speechSynthesis.speak(utterance);
+    };
+    try {
+      const audio = await voiceReply({ presentationId, requestId, locale });
+      if (!valid()) return;
+      if (!(audio instanceof ArrayBuffer)) { fallback(); return; }
+      const url = URL.createObjectURL(new Blob([audio], { type: "audio/mpeg" }));
+      const player = new Audio(url);
+      audioReply.current = { player, url };
+      const releaseAudio = () => { URL.revokeObjectURL(url); if (audioReply.current?.player === player) audioReply.current = null; };
+      player.onended = () => { releaseAudio(); if (valid()) setSpeaking(false); };
+      player.onerror = () => { releaseAudio(); if (valid()) { setSpeaking(false); fallback(); } };
+      await player.play();
+      if (valid()) setSpeaking(true); else { player.pause(); releaseAudio(); }
+    } catch { if (valid()) { if (audioReply.current) { audioReply.current.player.pause(); URL.revokeObjectURL(audioReply.current.url); audioReply.current = null; } fallback(); } }
   };
   const showError = (caught: unknown) => {
     const message = caught instanceof Error ? caught.message : String(caught);
@@ -74,16 +102,17 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
   const send = async (payload: { text: string } | { audio: ArrayBuffer; mime: string }) => {
     setPhase("thinking"); setError("");
     try {
-      const result = await talk({ presentationId, requestId: crypto.randomUUID(), locale, ...payload });
+      const requestId = crypto.randomUUID();
+      const result = await talk({ presentationId, requestId, locale, ...payload });
       if (!mounted.current) return;
-      setTranscript(result.transcript); setReply(result.reply); speak(result.reply);
+      setTranscript(result.transcript); setReply(result.reply); void speak(result.reply, requestId);
     } catch (caught) { if (mounted.current) showError(caught); }
     finally { if (mounted.current) setPhase("idle"); }
   };
   const stop = () => { if (recorder.current?.state === "recording") recorder.current.stop(); release(); };
   const start = async () => {
     if (phase !== "idle") return;
-    setOpen(true); setError(""); speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel();
+    setOpen(true); setError(""); stopSpeech(); setSpeaking(false);
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setError(tr("Tu navegador no permite grabar. Escribe el comando abajo.")); input.current?.focus(); return;
     }
@@ -117,7 +146,7 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
   };
   const close = () => {
     if (busy) return;
-    discardRecording(); setPhase("idle"); setOpen(false); speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel(); button.current?.focus();
+    discardRecording(); setPhase("idle"); setOpen(false); stopSpeech(); setSpeaking(false); button.current?.focus();
   };
   const cancel = () => {
     discardRecording(); setPhase("idle"); setError(""); button.current?.focus();
@@ -130,7 +159,7 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
       if (phase === "recording" || phase === "permission") {
         discardRecording(); setPhase("idle"); setError("");
       }
-      speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel();
+      stopSpeech(); setSpeaking(false);
       collapseTab.current?.focus({ preventScroll: true });
     }
   };
@@ -141,13 +170,14 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
     <JDCharacter cue={cue} phase={phase === "idle" && speaking ? "speaking" : phase} />
     {open && <section id="jd-panel" className="jd-panel" role="region" aria-label={tr("JD, tu copiloto de voz")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); close(); } }}>
       <header><div><strong>{tr("JD, tu copiloto de voz")}</strong><small>{tr("Tú hablas. La sala responde.")}</small></div><button disabled={busy} className="jd-close" aria-label={tr("Cerrar JD")} onClick={close}>×</button></header>
-      <p>{tr("Avanza o retrocede, crea slides y ajusta el tiempo con tu voz.")}</p>
+      <p>{tr("Avanza o retrocede, ajusta el tiempo y muestra reacciones con tu voz.")}</p>
       <div className={`jd-listening ${phase}`} role="status">{tr(phase === "recording" ? "Te escucho… pulsa de nuevo para terminar (máx. 30 s)" : phase === "thinking" ? "JD está preparando la respuesta…" : phase === "permission" ? "Esperando permiso del micrófono…" : "Un clic para hablar. Otro para terminar.")}</div>
       {transcript && <blockquote>{transcript}</blockquote>}
       {reply && <p className="jd-reply" role="status">{reply}</p>}
       {error && <p className="jd-error" role="alert">{error}</p>}
-      <form onSubmit={submit}><label htmlFor="jd-command">{tr("También puedes escribirle")}</label><div><input ref={input} id="jd-command" value={text} onChange={event => setText(event.target.value)} maxLength={1000} placeholder={tr("JD, crea un slide sobre Convex")} disabled={phase !== "idle"} /><button type="submit" disabled={phase !== "idle" || !text.trim()}>{tr("Enviar")}</button></div></form>
-      <label className="jd-spoken"><input type="checkbox" checked={spoken} onChange={event => { setSpoken(event.target.checked); if (!event.target.checked) { speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel(); } }} />{tr("Responder en voz alta")}</label>
+      <form onSubmit={submit}><label htmlFor="jd-command">{tr("También puedes escribirle")}</label><div><input ref={input} id="jd-command" value={text} onChange={event => setText(event.target.value)} maxLength={1000} placeholder={tr("JD, cómo me siento al ver los costos de Convex")} disabled={phase !== "idle"} /><button type="submit" disabled={phase !== "idle" || !text.trim()}>{tr("Enviar")}</button></div></form>
+      <label className="jd-spoken"><input type="checkbox" checked={spoken} onChange={event => { setSpoken(event.target.checked); if (!event.target.checked) { stopSpeech(); setSpeaking(false); } }} />{tr("Responder en voz alta")}</label>
+      <small className="jd-voice-label">Voz generada por IA · JD</small>
 
       <small className="jd-privacy">{tr("Solo se graba mientras escucho. El audio se procesa en Cloudflare; no se guarda en Slidex.")}</small>
     </section>}
