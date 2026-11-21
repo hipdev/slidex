@@ -562,3 +562,30 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .account-dialog .presentation-history p { font-size:12px; color:#816455; }
 .account-dialog input:focus-visible,.otp-links button:focus-visible { outline:3px solid #c85835; outline-offset:3px; }
 @media(max-width:540px) { .account-dialog { width:calc(100% - 28px); max-height:calc(100dvh - 28px); padding:26px 22px; }.account-dialog h2 { font-size:31px; }.account-content>.eyebrow { font-size:10px; letter-spacing:.14em; }.otp-slots { gap:6px; }.otp-slot { width:calc((100% - 30px)/6); max-width:48px; height:56px; font-size:26px; }.otp-steps { gap:8px; font-size:10px; }.presentation-history>a { flex-wrap:wrap; }.presentation-history>a small { text-align:left; } }
+
+/* Welcome: make joining the room the main action. */
+.stage.opening .slide-copy { margin:22px 0 16px; max-width:none; }
+.stage.opening:has(.join-card) .slide-copy h1 { font-size:clamp(32px,4.2vw,68px); max-width:24ch; }
+.join-card { display:grid; grid-template-columns:minmax(200px,.8fr) minmax(0,1.2fr); gap:clamp(24px,4vw,64px); min-height:350px; padding:clamp(24px,3vw,44px); margin:18px 0; border-radius:22px; position:relative; z-index:1; }
+.join-card-qr { justify-self:center; width:clamp(210px,23vw,340px); max-width:100%; border-radius:16px; }
+.join-card-qr svg { display:block; width:100%; }
+.join-card-copy { min-width:0; }
+.join-card .eyebrow { font-size:clamp(10px,1vw,13px); }
+.join-card h2 { font-size:clamp(24px,2.5vw,40px); margin:12px 0; }
+.join-card p { font-size:clamp(13px,1.1vw,17px); margin:0 0 20px; line-height:1.55; }
+.join-code-label { display:block; color:#72503e; font-size:12px; }
+.join-card .join-room-code { font:600 clamp(48px,5.2vw,84px)/1.2 'DM Mono',monospace; letter-spacing:.1em; margin:4px 0 14px; color:#3f251a; }
+.join-card a { font-size:clamp(12px,1.1vw,17px); }
+.join-card .join-card-copy>button { font-size:13px; min-height:44px; margin-top:8px; }
+.invite-code { font-size:clamp(52px,8vw,112px); }
+@media(max-width:900px) { .join-card { grid-template-columns:minmax(150px,.8fr) minmax(0,1.2fr); gap:22px; padding:24px; }.join-card-qr { width:230px; }.join-card .join-room-code { font-size:52px; } }
+@media(max-width:680px) {
+  .join-card { grid-template-columns:1fr; min-height:0; gap:18px; padding:20px 18px; text-align:center; }
+  .join-card-qr { width:min(100%,220px); }.join-card-qr svg { width:100%; }
+  .join-card h2 { font-size:27px; }.join-card p { font-size:14px; margin-bottom:18px; }
+  .join-card .join-room-code { font-size:58px; }.join-card .join-card-copy { min-width:0; }
+  .stage.opening .slide-copy { margin:14px 0 0; }.stage.opening:has(.join-card) .slide-copy h1 { font-size:clamp(30px,8vw,42px); }
+}
+/* Keep the larger QR square intact when the welcome view scrolls on phones. */
+.stage.opening>.slide-copy,.stage.opening>.stage-meta,.stage.opening>.slide-footer,.stage.opening>.join-card { flex-shrink:0; }
+.stage.opening>.reaction-strip { position:relative; bottom:auto; left:auto; flex-shrink:0; }

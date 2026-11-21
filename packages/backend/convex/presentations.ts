@@ -8,6 +8,29 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 
 const emoji = v.union(v.literal("fire"), v.literal("mind"), v.literal("heart"), v.literal("question"));
 
+async function allocateJoinCode(ctx: MutationCtx) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const code = Array.from(crypto.getRandomValues(new Uint8Array(4)), byte => alphabet[byte & 31]).join("");
+    const assigned = await ctx.db.query("presentations").withIndex("by_joinCode", q => q.eq("joinCode", code)).unique();
+    const legacy = await ctx.db.query("presentations").withIndex("by_slug", q => q.eq("slug", `LIVE-${code}`)).unique();
+    const direct = await ctx.db.query("presentations").withIndex("by_slug", q => q.eq("slug", code)).unique();
+    if (!assigned && !legacy && !direct) return code;
+  }
+  throw new Error("Could not allocate a room code. Try again.");
+}
+
+export const ensureJoinCode = mutation({
+  args: { presentationId: v.id("presentations") }, returns: v.string(),
+  handler: async (ctx, { presentationId }) => {
+    const room = await requireOwner(ctx, presentationId);
+    if (room.joinCode) return room.joinCode;
+    const joinCode = await allocateJoinCode(ctx);
+    await ctx.db.patch(presentationId, { joinCode });
+    return joinCode;
+  },
+});
+
 export const createDemo = mutation({
   args: { ownerName: v.string(), locale: localeValidator },
   returns: v.object({ presentationId: v.id("presentations"), slug: v.string() }),
@@ -16,13 +39,14 @@ export const createDemo = mutation({
     if (!ownerId) throw new Error("Sign in before creating a presentation");
     await limits.limit(ctx,"rooms",{key:ownerId,throws:true});
     const createdAt = Date.now();
-    const slug = `LIVE-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    const joinCode = await allocateJoinCode(ctx);
+    const slug = `LIVE-${joinCode}`;
     const presentationId = await ctx.db.insert("presentations", {
-      title: (locale === "en" ? "A presentation that listens." : "Una presentación que escucha."), slug, ownerName, ownerId, status: "live", createdAt,
+      title: (locale === "en" ? "A presentation that listens." : "Una presentación que escucha."), slug, joinCode, ownerName, ownerId, status: "live", createdAt,
     });
     const titleId = await ctx.db.insert("slides", {
       presentationId, order: 0, kind: "title", title: (locale === "en" ? "The next big idea is in this room." : "La próxima gran idea está en esta sala."),
-      body: (locale === "en" ? "Suggest an improvement, share what you discover, and let\u2019s build the last slide together." : "Propón una mejora, comparte lo que descubres y construyamos juntos el último slide."),
+      body: "",
     });
     await ctx.db.insert("slides", {
       presentationId, order: 1, kind: "poll", title: (locale === "en" ? "Where should we go next?" : "¿Hacia dónde vamos ahora?"),
@@ -44,7 +68,11 @@ export const getBySlug = query({
     presentation: schema.doc("presentations"), slides: v.array(schema.doc("slides")), reactions: v.array(schema.doc("reactions")), votes: v.array(schema.doc("votes")), inbox: v.array(schema.doc("inboxItems")), operations: v.array(schema.doc("operations")), isHost: v.boolean(), participantCount: v.number(),
   })),
   handler: async (ctx, { slug }) => {
-    const presentation = await ctx.db.query("presentations").withIndex("by_slug", (q) => q.eq("slug", slug)).unique();
+    const normalized = slug.trim().toUpperCase();
+    const code = normalized.replace(/^LIVE-/, "");
+    let presentation = await ctx.db.query("presentations").withIndex("by_slug", (q) => q.eq("slug", normalized)).unique();
+    if (!presentation && /^[A-Z0-9]{4}$/.test(code)) presentation = await ctx.db.query("presentations").withIndex("by_joinCode", q => q.eq("joinCode", code)).unique();
+    if (!presentation && /^[A-Z0-9]{4,5}$/.test(code)) presentation = await ctx.db.query("presentations").withIndex("by_slug", q => q.eq("slug", `LIVE-${code}`)).unique();
     if (!presentation) return null;
     const slides = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", presentation._id)).take(50);
     const reactions = await ctx.db.query("reactions").withIndex("by_presentation_and_slide", (q) => q.eq("presentationId", presentation._id)).take(200);

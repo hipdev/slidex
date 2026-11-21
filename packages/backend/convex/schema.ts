@@ -31,6 +31,7 @@ export default defineSchema({
   presentations: defineTable({
     title: v.string(),
     slug: v.string(),
+    joinCode: v.optional(v.string()),
     ownerName: v.string(),
     ownerId: v.optional(v.id("users")),
     status: v.union(v.literal("draft"), v.literal("live"), v.literal("ended")),
@@ -48,7 +49,7 @@ export default defineSchema({
     jdLastCommand: v.optional(v.object({ requestId: v.string(), reply: v.string() })),
     agentInboxId: v.optional(v.string()),
     moment: v.optional(v.object({ caption: v.string(), imageUrl: v.optional(v.string()), sourceUrl: v.optional(v.string()), createdAt: v.number() })),
-  }).index("by_slug", ["slug"]).index("by_agentInboxId", ["agentInboxId"]).index("by_ownerId", ["ownerId"]),
+  }).index("by_slug", ["slug"]).index("by_joinCode", ["joinCode"]).index("by_agentInboxId", ["agentInboxId"]).index("by_ownerId", ["ownerId"]),
   slides: defineTable({
     presentationId: v.id("presentations"),
     order: v.number(),

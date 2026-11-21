@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Doc, Id } from "@slidex/backend/data-model";
 
 import { tr } from "../i18n/provider";
+import { starterText } from "../i18n/starter-copy";
 
 type SlideNavigatorProps = {
   slides: Doc<"slides">[];
@@ -57,13 +58,13 @@ function Thumb({ slide, index, active, draggable, onSelect }: ThumbProps) {
     {...attributes}
     {...listeners}
   >
-    <span>{String(index + 1).padStart(2, "0")}</span><b>{slide.title}</b><em>{tr(`kind.${slide.kind}`)}</em>
+    <span>{String(index + 1).padStart(2, "0")}</span><b>{starterText(slide.title)}</b><em>{tr(`kind.${slide.kind}`)}</em>
   </button>;
 }
 
 function OverlayThumb({ slide, index }: { slide: Doc<"slides">; index: number }) {
   return <div className="thumb slide-drag-overlay" aria-hidden="true">
-    <span>{String(index + 1).padStart(2, "0")}</span><b>{slide.title}</b><em>{tr(`kind.${slide.kind}`)}</em>
+    <span>{String(index + 1).padStart(2, "0")}</span><b>{starterText(slide.title)}</b><em>{tr(`kind.${slide.kind}`)}</em>
   </div>;
 }
 

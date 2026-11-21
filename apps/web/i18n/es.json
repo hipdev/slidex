@@ -121,7 +121,7 @@
   "▥ Pulso de la sala": "▥ Pulso de la sala",
   "DECK /": "DECK /",
   "Create a room": "Crear una sala",
-  "SLIDE": "SLIDE",
+  "SLIDE": "DIAPOSITIVA",
   "✦ RESEARCH AGENT": "✦ INVESTIGACIÓN",
   "● LIVE CANVAS": "● EN VIVO",
   "AUDIENCE TAKEOVER": "LA AUDIENCIA DECIDE",
@@ -362,5 +362,16 @@
   "Sin contraseña. Un código, tu correo y todas tus ideas.": "Sin contraseña. Un código, tu correo y todas tus ideas.",
   "Código de 6 dígitos": "Código de 6 dígitos",
   "Guarda tu trabajo": "Guarda tu trabajo",
-  "Mis presentaciones": "Mis presentaciones"
+  "Mis presentaciones": "Mis presentaciones",
+  "Una presentación que escucha.": "Una presentación que escucha.",
+  "La próxima gran idea está en esta sala.": "La próxima gran idea está en esta sala.",
+  "¿Hacia dónde vamos ahora?": "¿Hacia dónde vamos ahora?",
+  "Vota por el próximo capítulo. El rumbo se decide aquí.": "Vota por el próximo capítulo. El rumbo se decide aquí.",
+  "Diapositivas que responden": "Diapositivas que responden",
+  "Una charla. Muchas perspectivas.": "Una charla. Muchas perspectivas.",
+  "Usa el copiloto para investigar, convertir un correo en diapositiva o dirigir la charla con tu voz. La audiencia escribe el cierre contigo.": "Usa el copiloto para investigar, convertir un correo en diapositiva o dirigir la charla con tu voz. La audiencia escribe el cierre contigo.",
+  "Código de la sala": "Código de la sala",
+  "SLIDEX · EN VIVO": "SLIDEX · EN VIVO",
+  "✎ Editar diapositiva": "✎ Editar diapositiva",
+  "Escanea con tu celular o escribe este código en la página de inicio.": "Escanea con tu celular o escribe este código en la página de inicio."
 }

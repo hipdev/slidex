@@ -7,7 +7,7 @@ import spanish from "./es.json";
 
 export const i18n = createInstance();
 void i18n.use(initReactI18next).init({
-  lng: "en", fallbackLng: "en", supportedLngs: ["en", "es"],
+  lng: "es", fallbackLng: "es", supportedLngs: ["en", "es"],
   resources: { es: { translation: spanish }, en: { translation: english } },
   keySeparator: false, nsSeparator: false, interpolation: { escapeValue: false },
   initAsync: false, react: { useSuspense: false },
@@ -16,7 +16,7 @@ export const tr = (key: string, options?: Record<string, unknown>) => String(i18
 export function useLocale() { const { i18n } = useTranslation(); return i18n.language === "en" ? "en" : "es"; }
 export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    let locale = "en";
+    let locale = "es";
     try { const saved = localStorage.getItem("slidex-language"); if (saved === "es" || saved === "en") locale = saved; } catch {}
     void i18n.changeLanguage(locale);
     const update = (language: string) => { document.documentElement.lang = language; try { localStorage.setItem("slidex-language", language); } catch {} };

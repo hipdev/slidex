@@ -56,7 +56,10 @@ Publica primero el backend con `pnpm convex:deploy`, comprueba su resultado y
 después publica el frontend en Vercel. No uses los scripts de Static Hosting para
 actualizar la web de Vercel. `SITE_URL` en Convex apunta al dominio de la web.
 Las rutas de sala siguen siendo parámetros de una página estática: `?room=LIVE-XXXXX`
-y su enlace corto `?r=XXXXX`; ninguna necesita un servidor de rutas.
+y su enlace corto `?r=AB7X`; ninguna necesita un servidor de rutas. Los códigos
+nuevos son de cuatro caracteres, sin `LIVE-`, y se asignan con comprobación de
+colisiones. Las salas anteriores reciben un alias cuando entra su propietario;
+sus enlaces y códigos antiguos siguen resolviendo la misma presentación.
 
 ## Acceso por correo OTP
 
@@ -130,7 +133,10 @@ de la generación para permitir dirigir la charla sin agotar el límite de slide
 `déjalo en diez minutos` fija un contador nuevo. Un ajuste conserva la pausa
 si estaba pausado, nunca baja de cero y no permite más de cuatro horas restantes.
 
-La primera diapositiva muestra el QR y el código. `Mostrar QR` abre la invitación
+La primera diapositiva muestra un QR ampliado y el código de cuatro caracteres.
+La bienvenida y los textos iniciales del demo se muestran en español por defecto;
+el antiguo párrafo introductorio no se muestra en la portada. El texto escrito
+por el usuario no se traduce ni se descarta. `Mostrar QR` abre la invitación
 a pantalla completa. La audiencia móvil no recibe el navegador de diapositivas
 ni los controles de JD; sigue la diapositiva seleccionada por el host.
 

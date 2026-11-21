@@ -6,6 +6,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@slidex/backend/api";
 import { tr, useLocale, useTranslation } from "../i18n/provider";
 import { OtpCodeInput } from "./otp-input";
+import { starterText } from "../i18n/starter-copy";
 
 type Account = { email?: string; isAnonymous?: boolean } | null | undefined;
 type History = { title: string; slug: string; status: string; createdAt: number }[] | undefined;
@@ -32,7 +33,7 @@ export function AccountDialog({ account, history, onClose, onSignOut }: {
       <p className="eyebrow">{tr("TU CUENTA SLIDEX")}</p>
       <h2 id="account-title">{tr(signedIn ? "Tus presentaciones" : "Guarda tus presentaciones")}</h2>
       {signedIn ? <><p className="account-intro">{tr("Sesión iniciada como {{email}}.", { email: account?.email ?? "" })}</p>{success && <p className="otp-success" role="status">{tr("Correo verificado. Tus presentaciones están guardadas.")}</p>}</> : <><p className="account-intro">{tr("Tu trabajo está en una sesión invitada. Verifica tu correo para conservarlo y volver desde cualquier dispositivo.")}</p><ConnectedEmailOtpForm onAuthenticated={() => setSuccess(true)} /></>}
-      {history && <div className="presentation-history"><h3>{tr("Historial de presentaciones")}</h3>{history.length ? history.map(item => <a key={item.slug} href={`/?room=${item.slug}`}><span>{item.title}</span><small>{tr(item.status === "live" ? "En vivo" : item.status === "ended" ? "Finalizada" : "Borrador")} · {new Date(item.createdAt).toLocaleDateString()}</small></a>) : <p>{tr("Todavía no hay presentaciones.")}</p>}</div>}
+      {history && <div className="presentation-history"><h3>{tr("Historial de presentaciones")}</h3>{history.length ? history.map(item => <a key={item.slug} href={`/?room=${item.slug}`}><span>{starterText(item.title)}</span><small>{tr(item.status === "live" ? "En vivo" : item.status === "ended" ? "Finalizada" : "Borrador")} · {new Date(item.createdAt).toLocaleDateString()}</small></a>) : <p>{tr("Todavía no hay presentaciones.")}</p>}</div>}
       {signedIn && <button className="account-signout" disabled={signingOut} onClick={async () => {
         setSigningOut(true); setSignOutError(false);
         try { await onSignOut(); onClose(); } catch { setSignOutError(true); setSigningOut(false); }
