@@ -911,7 +911,7 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .rebask-features h2 { font-size:clamp(19px,2vw,32px); letter-spacing:-.025em; font-weight:550; margin:0; }
 .rebask-command { display:flex; gap:16px; margin-top:30px; padding:18px 22px; border:1px solid #a4b39c; background:#e7eddf; border-radius:12px; font-size:clamp(12px,1.3vw,20px); }
 .rebask-command>span { color:#537044; }
-.rebask-creator { overflow:hidden; border:1px solid #899781; border-radius:22px; background:#232d25; color:#f7f7ed; transform:rotate(2deg); box-shadow:12px 16px 0 #d3dbce; }
+.rebask-creator { width:100%; max-width:400px; justify-self:end; overflow:hidden; border:1px solid #899781; border-radius:22px; background:#232d25; color:#f7f7ed; transform:rotate(2deg); box-shadow:12px 16px 0 #d3dbce; }
 .rebask-creator>img { display:block; width:100%; aspect-ratio:1.25; object-fit:cover; object-position:center 35%; }
 .rebask-creator-copy { padding:26px; }
 .rebask-creator-copy>.story-kicker { color:#bacda8; }
