@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 const emoji = v.union(v.literal("fire"), v.literal("mind"), v.literal("heart"), v.literal("question"));
@@ -107,6 +108,80 @@ export const listMine = query({
   },
 });
 
+// Remove the room atomically so its links and history stop resolving at once.
+// Child data is cleaned in bounded batches, even for a large audience.
+export const remove = mutation({
+  args: { presentationId: v.id("presentations") }, returns: v.null(),
+  handler: async (ctx, { presentationId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Only the presentation host can delete this presentation");
+    const room = await ctx.db.get(presentationId);
+    if (!room) return null;
+    if (room.ownerId !== userId) throw new Error("Only the presentation host can delete this presentation");
+    await ctx.db.delete(presentationId);
+    await ctx.scheduler.runAfter(0, internal.presentations.cleanupDeleted, { presentationId, phase: 0 });
+    return null;
+  },
+});
+
+export const cleanupDeleted = internalMutation({
+  args: { presentationId: v.id("presentations"), phase: v.number() }, returns: v.null(),
+  handler: async (ctx, { presentationId, phase }): Promise<null> => {
+    if (!Number.isInteger(phase) || phase < 0 || phase > 7) throw new Error("Invalid cleanup phase");
+    // Never clean records of an existing room, even on an accidental retry.
+    if (await ctx.db.get(presentationId)) return null;
+    let count = 0;
+    switch (phase) {
+      case 0: {
+        const rows = await ctx.db.query("contributions").withIndex("by_presentationId", q => q.eq("presentationId", presentationId)).take(25);
+        count = rows.length;
+        for (const row of rows) {
+          const children = await ctx.db.query("endorsements").withIndex("by_contributionId_and_userId", q => q.eq("contributionId", row._id)).take(100);
+          for (const child of children) await ctx.db.delete(child._id);
+          if (children.length < 100) await ctx.db.delete(row._id);
+        }
+        break;
+      }
+      case 1: {
+        const rows = await ctx.db.query("interventions").withIndex("by_presentationId", q => q.eq("presentationId", presentationId)).take(25);
+        count = rows.length;
+        for (const row of rows) {
+          const children = await ctx.db.query("interventionVotes").withIndex("by_interventionId_and_userId", q => q.eq("interventionId", row._id)).take(100);
+          for (const child of children) await ctx.db.delete(child._id);
+          if (children.length < 100) await ctx.db.delete(row._id);
+        }
+        break;
+      }
+      case 2: {
+        const rows = await ctx.db.query("slides").withIndex("by_presentation_and_order", q => q.eq("presentationId", presentationId)).take(100);
+        count = rows.length; for (const row of rows) await ctx.db.delete(row._id); break;
+      }
+      case 3: {
+        const rows = await ctx.db.query("audience").withIndex("by_presentation_and_attendee", q => q.eq("presentationId", presentationId)).take(100);
+        count = rows.length; for (const row of rows) await ctx.db.delete(row._id); break;
+      }
+      case 4: {
+        const rows = await ctx.db.query("reactions").withIndex("by_presentation_and_slide", q => q.eq("presentationId", presentationId)).take(100);
+        count = rows.length; for (const row of rows) await ctx.db.delete(row._id); break;
+      }
+      case 5: {
+        const rows = await ctx.db.query("votes").withIndex("by_presentation_and_slide", q => q.eq("presentationId", presentationId)).take(100);
+        count = rows.length; for (const row of rows) await ctx.db.delete(row._id); break;
+      }
+      case 6: {
+        const rows = await ctx.db.query("operations").withIndex("by_presentation_and_creation", q => q.eq("presentationId", presentationId)).take(100);
+        count = rows.length; for (const row of rows) await ctx.db.delete(row._id); break;
+      }
+      case 7: {
+        const rows = await ctx.db.query("inboxItems").withIndex("by_presentation_and_received", q => q.eq("presentationId", presentationId)).take(100);
+        count = rows.length; for (const row of rows) await ctx.db.delete(row._id); break;
+      }
+    }
+    if (count || phase < 7) await ctx.scheduler.runAfter(0, internal.presentations.cleanupDeleted, { presentationId, phase: count ? phase : phase + 1 });
+    return null;
+  },
+});
+
 export const join = mutation({
   args: { presentationId: v.id("presentations"), name: v.optional(v.string()) },
   returns: v.null(),
@@ -165,6 +240,7 @@ export const addSlide = internalMutation({
   args: { presentationId: v.id("presentations"), kind: v.union(v.literal("research"), v.literal("content")), title: v.string(), body: v.string(), sourceUrls: v.array(v.string()), imageUrl: v.optional(v.string()), imageSourceUrl: v.optional(v.string()) },
   returns: v.id("slides"),
   handler: async (ctx, args) => {
+    if (!await ctx.db.get(args.presentationId)) throw new Error("Presentation not found");
     const last = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", args.presentationId)).order("desc").first();
     if ((last?.order ?? 0) >= 49) throw new Error("This deck has reached its 50 slide limit");
     return await ctx.db.insert("slides", { ...args, order: (last?.order ?? -1) + 1, generatedAt: Date.now() });
@@ -187,7 +263,7 @@ export const reorderSlides = mutation({
 export const updateOperation = internalMutation({
   args: { operationId: v.id("operations"), status: v.union(v.literal("running"), v.literal("complete"), v.literal("failed")), output: v.optional(v.string()), error: v.optional(v.string()) },
   returns: v.null(),
-  handler: async (ctx, { operationId, ...patch }) => { await ctx.db.patch(operationId, patch); return null; },
+  handler: async (ctx, { operationId, ...patch }) => { if (await ctx.db.get(operationId)) await ctx.db.patch(operationId, patch); return null; },
 });
 
 export const recordInbox = internalMutation({

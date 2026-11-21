@@ -381,5 +381,14 @@
   "Mostrar controles": "Show controls",
   "Ocultar controles": "Hide controls",
   "JD no está disponible en este momento.": "JD is unavailable right now.",
-  "No pude procesarlo. Intenta de nuevo.": "I couldn’t process that. Try again."
+  "No pude procesarlo. Intenta de nuevo.": "I couldn’t process that. Try again.",
+  "Presentación eliminada.": "Presentation deleted.",
+  "No pudimos eliminar la presentación. Intenta de nuevo.": "We couldn’t delete the presentation. Try again.",
+  "Eliminar presentación {{code}}": "Delete presentation {{code}}",
+  "Confirmar eliminación": "Confirm deletion",
+  "¿Eliminar «{{title}}»?": "Delete “{{title}}”?",
+  "Se borrarán sus diapositivas y participaciones. Esta acción no se puede deshacer.": "Its slides and audience contributions will be deleted. This cannot be undone.",
+  "Eliminando…": "Deleting…",
+  "Eliminar presentación": "Delete presentation",
+  "Cancelar": "Cancel"
 }

@@ -18,6 +18,7 @@ export const list = query({
     const slide = await ctx.db.get(slideId);
     if (!slide) return [];
     const room = await ctx.db.get(slide.presentationId);
+    if (!room) return [];
     const rows = await ctx.db.query("interventions").withIndex("by_slideId", q => q.eq("slideId", slideId)).take(50);
     return Promise.all(rows.map(async row => ({
       ...row,

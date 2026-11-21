@@ -359,8 +359,8 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .account-switch, .account-signout { margin-top:14px; border:0; background:transparent; color:#8d3528; font-size:12px; font-weight:800; text-decoration:underline; padding:4px 0; min-height:28px; }
 .presentation-history { margin-top:25px; padding-top:18px; border-top:1px solid #dfcbbb; }
 .presentation-history h3 { margin:0 0 10px; font-size:13px; letter-spacing:.02em; }
-.presentation-history > a { display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid #ecddd1; color:#583529; font-size:13px; font-weight:700; }
-.presentation-history > a small { color:#8d7061; font-size:10px; text-transform:capitalize; text-align:right; }
+.history-row > a { flex:1; min-width:0; display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid #ecddd1; color:#583529; font-size:13px; font-weight:700; }
+.history-row > a small { color:#8d7061; font-size:10px; text-transform:capitalize; text-align:right; }
 .presentation-history > p { color:#846759; font-size:13px; }
 
 /* Audience twists: invitation, actions, then the live conversation. */
@@ -572,7 +572,7 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .otp-success { padding:12px; background:#edf1e2; color:#4d622d; border-radius:9px; font-size:13px; line-height:1.5; }
 .account-dialog .presentation-history p { font-size:12px; color:#816455; }
 .account-dialog input:focus-visible,.otp-links button:focus-visible { outline:3px solid #c85835; outline-offset:3px; }
-@media(max-width:540px) { .account-dialog { width:calc(100% - 28px); max-height:calc(100dvh - 28px); padding:26px 22px; }.account-dialog h2 { font-size:31px; }.account-content>.eyebrow { font-size:10px; letter-spacing:.14em; }.otp-slots { gap:6px; }.otp-slot { width:calc((100% - 30px)/6); max-width:48px; height:56px; font-size:26px; }.otp-steps { gap:8px; font-size:10px; }.presentation-history>a { flex-wrap:wrap; }.presentation-history>a small { text-align:left; } }
+@media(max-width:540px) { .account-dialog { width:calc(100% - 28px); max-height:calc(100dvh - 28px); padding:26px 22px; }.account-dialog h2 { font-size:31px; }.account-content>.eyebrow { font-size:10px; letter-spacing:.14em; }.otp-slots { gap:6px; }.otp-slot { width:calc((100% - 30px)/6); max-width:48px; height:56px; font-size:26px; }.otp-steps { gap:8px; font-size:10px; }.history-row>a { flex-wrap:wrap; }.history-row>a small { text-align:left; } }
 
 /* Welcome: make joining the room the main action. */
 .stage.opening .slide-copy { margin:22px 0 16px; max-width:none; }
@@ -637,3 +637,23 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .live-indicator.is-live { background:#d52d30; }
 .live-indicator.is-live::after { content:""; position:absolute; inset:0; border:1px solid #d52d30; border-radius:50%; animation:live-recording 1.8s ease-out infinite; }
 @keyframes live-recording { from { transform:scale(1); opacity:.65; } 80%,to { transform:scale(2.8); opacity:0; } }
+
+.history-item { border-top:1px solid #ecddd1; }
+.history-row { display:flex; align-items:center; gap:12px; }
+.history-row > a { border-top:0; align-items:center; }
+.history-row > a > span { overflow-wrap:anywhere; }
+.history-row small { flex:none; }
+.history-row code { display:block; margin-top:4px; font-size:10px; color:#705445; }
+.history-delete { display:grid; place-items:center; flex:none; min-width:44px; min-height:44px; border:1px solid #e2c9bb; border-radius:10px; color:#a73b2d; background:transparent; }
+.history-delete:hover:not(:disabled) { background:#f8e6de; border-color:#b64a36; }
+.history-delete[aria-expanded="true"] { background:#f8e6de; }
+.history-delete-confirm { padding:14px; margin:0 0 12px; border:1px solid #dcb3a3; border-radius:10px; background:#fff2e9; animation:slide-arrive 180ms ease-out; }
+.account-dialog .history-delete-confirm p { margin:0 0 6px; color:#583529; }
+.history-delete-confirm > small { display:block; font-size:12px; line-height:1.6; color:#795747; }
+.history-delete-confirm > div { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.history-delete-confirm button { min-height:44px; padding:8px 12px; border:1px solid #bfa18a; border-radius:8px; color:#56382a; background:#fffaf4; font-size:12px; }
+.history-delete-confirm button.history-delete-confirm-button { border-color:#a5372c; color:white; background:#b63c2e; }
+.history-delete-confirm button:hover:not(:disabled) { filter:brightness(.94); }
+.account-dialog .history-delete-confirm [role="alert"] { color:#a52d25; margin-top:10px; }
+.account-dialog .history-notice { color:#526830; }
+.history-delete:focus:not(:focus-visible),.presentation-history h3:focus:not(:focus-visible) { outline:none; }

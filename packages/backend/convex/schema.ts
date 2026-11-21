@@ -90,7 +90,7 @@ export default defineSchema({
     title: v.optional(v.string()), body: v.optional(v.string()),
     sourceUrls: v.optional(v.array(v.string())), error: v.optional(v.string()),
     publishedSlideId: v.optional(v.id("slides")),
-  }).index("by_slideId", ["slideId"]),
+  }).index("by_slideId", ["slideId"]).index("by_presentationId", ["presentationId"]),
   interventionVotes: defineTable({
     interventionId: v.id("interventions"), userId: v.id("users"),
   }).index("by_interventionId_and_userId", ["interventionId", "userId"]),

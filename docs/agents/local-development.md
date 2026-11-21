@@ -110,6 +110,22 @@ de entrega, renovación y revocación. Comprueba ambos pasos del diálogo en mó
 y escritorio antes de publicar. El frontend requiere `input-otp` en la lista
 explícita de dependencias que Vite precompila.
 
+## Eliminar presentaciones desde el historial
+
+Cada fila del diálogo de cuenta muestra el código de la sala y una papelera.
+La confirmación es inline, con Cancelar como foco inicial y un aviso de borrado
+permanente. `presentations.remove` comprueba la sesión y la propiedad en Convex;
+solo elimina la sala indicada. El historial se actualiza mediante `useQuery` y
+el enlace compartido deja de resolver inmediatamente. No se eliminan cuentas ni
+se cierran sus sesiones.
+
+La limpieza interna recorre ocho fases con lotes acotados e índices: aportes y
+sus apoyos, intervenciones y sus votos, slides, asistentes, reacciones, votos,
+operaciones y correos locales. No borra datos de salas que todavía existan. Los
+resultados tardíos de IA no pueden insertar slides en una sala eliminada. Las
+pruebas usan bases aisladas y verifican permisos, reintentos, más de un lote y
+que las demás presentaciones permanezcan intactas.
+
 ## JD y contador compartido
 
 JD reutiliza los Workers de transcripción e interpretación de Conjuntify. Configura

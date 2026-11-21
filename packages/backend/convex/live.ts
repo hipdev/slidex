@@ -11,7 +11,7 @@ export const list = query({
   returns: v.array(schema.doc("contributions").extend({ endorsed: v.boolean() })),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!userId || !await ctx.db.get(args.presentationId)) return [];
     const rows = await ctx.db.query("contributions").withIndex("by_presentationId", q => q.eq("presentationId", args.presentationId)).order("desc").take(100);
     return await Promise.all(rows.map(async row => ({ ...row, endorsed: !!await ctx.db.query("endorsements").withIndex("by_contributionId_and_userId", q => q.eq("contributionId", row._id).eq("userId", userId)).unique() })));
   },

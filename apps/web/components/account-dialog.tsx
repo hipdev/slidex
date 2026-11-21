@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ComponentProps } from "react";
 import { useConvex, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@slidex/backend/api";
 import { tr, useLocale, useTranslation } from "../i18n/provider";
 import { OtpCodeInput } from "./otp-input";
+import { PresentationHistory } from "./presentation-history";
 import { finishSessionHandoff } from "./session-handoff";
-import { starterText } from "../i18n/starter-copy";
 
 type Account = { email?: string; isAnonymous?: boolean } | null | undefined;
-type History = { title: string; slug: string; status: string; createdAt: number }[] | undefined;
+type History = ComponentProps<typeof PresentationHistory>["history"] | undefined;
 
 export function AccountDialog({ account, history, onClose, onSignOut }: {
   account: Account; history: History; onClose: () => void; onSignOut: () => Promise<void>;
 }) {
   useTranslation();
+  const removePresentation = useMutation(api.presentations.remove);
   const dialog = useRef<HTMLDialogElement>(null);
   const [success, setSuccess] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -35,7 +36,7 @@ export function AccountDialog({ account, history, onClose, onSignOut }: {
       <p className="eyebrow">{tr("TU CUENTA SLIDEX")}</p>
       <h2 id="account-title">{tr(signedIn ? "Tus presentaciones" : "Guarda tus presentaciones")}</h2>
       {signedIn ? <><p className="account-intro">{tr("Sesión iniciada como {{email}}.", { email: account?.email ?? "" })}</p>{success && <p className="otp-success" role="status">{tr("Correo verificado. Tus presentaciones están guardadas.")}</p>}</> : <><p className="account-intro">{tr("Tu trabajo está en una sesión invitada. Verifica tu correo para conservarlo y volver desde cualquier dispositivo.")}</p><ConnectedEmailOtpForm onAuthenticated={() => setSuccess(true)} onVerifying={setVerifying} /></>}
-      {history && <div className="presentation-history"><h3>{tr("Historial de presentaciones")}</h3>{history.length ? history.map(item => <a key={item.slug} href={`/?room=${item.slug}`}><span>{starterText(item.title)}</span><small>{tr(item.status === "live" ? "En vivo" : item.status === "ended" ? "Finalizada" : "Borrador")} · {new Date(item.createdAt).toLocaleDateString()}</small></a>) : <p>{tr("Todavía no hay presentaciones.")}</p>}</div>}
+      {history && <PresentationHistory history={history} onDelete={async presentationId => { await removePresentation({ presentationId }); }} />}
       {signedIn && <button className="account-signout" disabled={signingOut} onClick={async () => {
         setSigningOut(true); setSignOutError(false);
         try { await onSignOut(); onClose(); } catch { setSignOutError(true); setSigningOut(false); }

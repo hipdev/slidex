@@ -381,5 +381,14 @@
   "Mostrar controles": "Mostrar controles",
   "Ocultar controles": "Ocultar controles",
   "JD no está disponible en este momento.": "JD no está disponible en este momento.",
-  "No pude procesarlo. Intenta de nuevo.": "No pude procesarlo. Intenta de nuevo."
+  "No pude procesarlo. Intenta de nuevo.": "No pude procesarlo. Intenta de nuevo.",
+  "Presentación eliminada.": "Presentación eliminada.",
+  "No pudimos eliminar la presentación. Intenta de nuevo.": "No pudimos eliminar la presentación. Intenta de nuevo.",
+  "Eliminar presentación {{code}}": "Eliminar presentación {{code}}",
+  "Confirmar eliminación": "Confirmar eliminación",
+  "¿Eliminar «{{title}}»?": "¿Eliminar «{{title}}»?",
+  "Se borrarán sus diapositivas y participaciones. Esta acción no se puede deshacer.": "Se borrarán sus diapositivas y participaciones. Esta acción no se puede deshacer.",
+  "Eliminando…": "Eliminando…",
+  "Eliminar presentación": "Eliminar presentación",
+  "Cancelar": "Cancelar"
 }
