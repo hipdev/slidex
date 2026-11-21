@@ -40,6 +40,14 @@ test("a reaction expires on the server deadline, and late mounts do not replay i
     assert.ok(renderer.toJSON(),"a late viewer joins only the remaining time");
     await act(async()=>{ctx.mock.timers.tick(4000);});
     assert.equal(renderer.toJSON(),null);
+    server=140_000;
+    await act(async()=>{renderer.update(React.createElement(JDReaction,{reaction:{kind:"farewell",requestId:"goodbye",startedAt:140_000,endsAt:160_000}}));});
+    assert.ok(renderer.toJSON());
+    assert.equal(renderer.root.findByType("img").props.src,"/images/jd/thats-all-folks.gif");
+    await act(async()=>{ctx.mock.timers.tick(10_000);});
+    assert.ok(renderer.toJSON(),"farewell must stay beyond the old ten-second duration");
+    await act(async()=>{ctx.mock.timers.tick(10_000);});
+    assert.equal(renderer.toJSON(),null,"farewell ends at twenty seconds");
   } finally {
     if(renderer) await act(async()=>renderer.unmount());
     for(const [key,descriptor] of Object.entries(descriptors)) {if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}

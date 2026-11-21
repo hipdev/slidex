@@ -5,9 +5,34 @@ import { registerCore, sessionIdentity } from "@convex-dev/auth/test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
-import { isConvexCostsReaction } from "./lib/jd_reactions";
+import { isConvexCostsReaction, isFarewellReaction } from "./lib/jd_reactions";
 
 const modules = import.meta.glob("./**/*.ts");
+
+test("farewell recognizes closing phrases but rejects negated, hypothetical and unrelated commands", () => {
+  for (const text of ["Listo JD, esto ha sido todo", "Listo JD, esto a sido todo", "that's all folks", "That’s all, folks!", "Eso es todo amigos", "Hey JD, eso ha sido todo"]) expect(isFarewellReaction(text)).toBe(true);
+  for (const text of ["No JD, esto ha sido todo", "No digas eso es todo amigos", "Si digo eso es todo amigos", "Qué significa that's all folks", "Crea un slide de eso es todo amigos", "JD baja el contador", "Mi factura de Convex"]) expect(isFarewellReaction(text)).toBe(false);
+});
+
+test("farewell is shared for twenty seconds without ending the room or changing slides, and retries do not extend it", async () => {
+  const { host, guest, room } = await fixture();
+  const before=(await guest.query(api.presentations.getBySlug,{slug:room.slug}))!;
+  const args={presentationId:room.presentationId,requestId:"goodbye-once",locale:"es" as const,text:"Listo JD, esto a sido todo"};
+  const fetch=vi.spyOn(globalThis,"fetch");
+  try {
+    await expect(guest.action(api.jd.talk,args)).rejects.toThrow("Only the presentation host");
+    await host.action(api.jd.talk,args);
+    const after=(await guest.query(api.presentations.getBySlug,{slug:room.slug}))!;
+    expect(after.presentation.jdReaction?.kind).toBe("farewell");
+    expect(after.presentation.jdReaction!.endsAt-after.presentation.jdReaction!.startedAt).toBe(20_000);
+    expect(after.presentation.currentSlideId).toBe(before.presentation.currentSlideId);
+    expect(after.presentation.status).toBe(before.presentation.status);
+    expect(after.slides).toEqual(before.slides);
+    await host.action(api.jd.talk,args);
+    expect((await guest.query(api.presentations.getBySlug,{slug:room.slug}))!.presentation.jdReaction).toEqual(after.presentation.jdReaction);
+    expect(fetch).not.toHaveBeenCalled();
+  } finally {fetch.mockRestore();}
+});
 
 test("billing reaction recognizes conversational Spanish without stealing normal commands", () => {
   for (const phrase of ["Hey JD, cómo me siento yo cuando veo los costos de Convex", "Hey JD, cómo me siento cuando veo la facturación de mis proyectos alojados en Convex", "JD, mi reacción al ver los precios de Convex", "JD, cómo reacciono cuando veo lo que pago por Convex"]) expect(isConvexCostsReaction(phrase)).toBe(true);

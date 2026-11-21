@@ -241,3 +241,11 @@ entradas. `requireSlide` rechaza slides archivados para impedir navegación,
 edición o participación desde clientes atrasados. JD también navega únicamente
 las activas. Las pruebas comprueban permisos, reintentos, selección, reordenamiento,
 restauración, aislamiento entre salas y protección de la última diapositiva.
+
+La despedida de JD reconoce «Listo JD, esto ha sido todo», «esto a sido todo»,
+«that's all folks» y «eso es todo amigos», con un camino rápido sin LLM y
+paráfrasis mediante el intérprete. Comparte `jdReaction.kind: farewell` y un deadline
+**de 20 segundos**. No termina la sala, no toca el contador y no navega ni crea
+slides. El GIF de Porky se precarga, incluye atribución a Tenor y usa la misma
+transición suave, caducidad y política de movimiento reducido que la reacción de
+facturación (que conserva sus 10 segundos).

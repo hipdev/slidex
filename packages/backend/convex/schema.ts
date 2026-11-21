@@ -58,7 +58,7 @@ export default defineSchema({
       slideId: v.optional(v.id("slides")), deltaSeconds: v.optional(v.number()),
     })),
     jdLastCommand: v.optional(v.object({ requestId: v.string(), reply: v.string() })),
-    jdReaction: v.optional(v.object({ kind: v.literal("convex_costs"), startedAt: v.number(), endsAt: v.number(), requestId: v.string() })),
+    jdReaction: v.optional(v.object({ kind: v.union(v.literal("convex_costs"), v.literal("farewell")), startedAt: v.number(), endsAt: v.number(), requestId: v.string() })),
     agentInboxId: v.optional(v.string()),
     moment: v.optional(v.object({ caption: v.string(), imageUrl: v.optional(v.string()), sourceUrl: v.optional(v.string()), createdAt: v.number() })),
   }).index("by_slug", ["slug"]).index("by_joinCode", ["joinCode"]).index("by_agentInboxId", ["agentInboxId"]).index("by_ownerId", ["ownerId"]),
