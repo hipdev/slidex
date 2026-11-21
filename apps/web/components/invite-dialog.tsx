@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { tr } from "../i18n/provider";
+import { roomLink } from "./join-card";
 
 export function InviteDialog({ slug, onClose, onCopy }: { slug: string; onClose: () => void; onCopy: () => Promise<boolean> }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -18,7 +19,7 @@ export function InviteDialog({ slug, onClose, onCopy }: { slug: string; onClose:
   const [url, setUrl] = useState("");
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    setUrl(`${window.location.origin}/?room=${encodeURIComponent(slug)}`);
+    setUrl(roomLink(window.location.origin, slug));
     const modal = dialog.current;
     modal?.showModal();
     return () => { modal?.close(); previous?.focus(); };

@@ -14,6 +14,9 @@ import { LanguagePicker } from "../i18n/provider";
 import { AiCompanion, QuickGuide } from "./ai-companion";
 import { SlideEditor } from "./slide-editor";
 import { InviteDialog } from "./invite-dialog";
+import { Countdown } from "./countdown";
+import { JDVoice } from "./jd-voice";
+import { JoinCard, roomLink } from "./join-card";
 import { PresentationControls } from "./presentation-controls";
 import { SlideNavigator } from "./slide-navigator";
 import { VoiceControls, MomentCard } from "./voice-controls";
@@ -47,7 +50,7 @@ function Slidex() {
   useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
   const copyInvite = async () => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/?room=${slug}`);
+      await navigator.clipboard.writeText(roomLink(window.location.origin, slug!));
       setCopyNotice(true);
       if (copyTimer.current) clearTimeout(copyTimer.current);
       copyTimer.current = setTimeout(() => setCopyNotice(false), 4000);
@@ -81,7 +84,8 @@ function Slidex() {
   const requestResearch = useMutation(api.research.request);
 
   useEffect(() => {
-    const value = new URLSearchParams(window.location.search).get("room");
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get("room") ?? (params.get("r") ? `LIVE-${params.get("r")}` : null);
     if (value) setSlug(value.toUpperCase());
     setPresenting(new URLSearchParams(window.location.search).get("view") === "stage");
   }, []);
@@ -122,7 +126,7 @@ function Slidex() {
     setPresenting(false); setPanel("agent");
     window.setTimeout(() => { const editor = document.getElementById("slide-editor") as HTMLDetailsElement | null; if (editor) { editor.open = true; editor.scrollIntoView({ behavior: "smooth", block: "center" }); document.getElementById("slide-title")?.focus({ preventScroll: true }); } }, 0);
   };
-  return <main className={`app-shell ${presenting ? "presentation-mode" : ""}`}>
+  return <main className={`app-shell ${presenting ? "presentation-mode" : ""} ${data.isHost ? "host-view" : "audience-view"}`}>
     <header className="topbar">
       <div className="header-identity"><a href="/" className="logo">SLID<span>EX</span></a><div className="header-room"><strong title={data.presentation.title}>{data.presentation.title}</strong><span><i />{slug} · {tr("participantCount", { count: data.participantCount })}</span></div></div>
       <div className="top-actions">
@@ -133,6 +137,7 @@ function Slidex() {
         <button className="share present-action" onClick={() => setPresenting(!presenting)}>{presenting ? tr("Salir del escenario") : tr("Presentar ⤢")}</button>
       </div>
     </header>
+    {data.isHost && <JDVoice key={data.presentation._id} presentationId={data.presentation._id} />}
     {accountOpen && <AccountDialog account={account} history={history} signUp={signUp} signIn={signIn} signUpPending={signUpPending} signInPending={signInPending} onClose={() => setAccountOpen(false)} onSignOut={() => void signOut()} />}
     {data.isHost && !presenting && current && <InterventionCue slideId={current._id} onReview={() => { setPresenting(false); setPanel("twists"); }} />}
     {copyNotice && <div className="copy-toast" role="status"><span>✓ {tr("Enlace copiado; compártelo para invitar a la sala")}</span><button aria-label={tr("Cerrar aviso")} onClick={() => setCopyNotice(false)}>×</button></div>}
@@ -153,8 +158,10 @@ function Slidex() {
         }}
       />
       <section className={`stage ${current?.kind ?? "content"}`}>
+        <Countdown room={data.presentation} isHost={data.isHost} />
         <div className="stage-meta"><span>{tr("SLIDE")} {String((current?.order ?? 0) + 1).padStart(2, "0")}</span><span>{current?.kind === "research" ? tr("✦ RESEARCH AGENT") : tr("● LIVE CANVAS")}</span></div>
         {data.presentation.showConclusions ? <ClosingWall presentationId={data.presentation._id} /> : <><div className="slide-copy" key={current?._id}><p className="accent-label">{current?.kind === "poll" ? tr("AUDIENCE TAKEOVER") : current?.kind === "research" ? tr("FRESHLY GENERATED") : tr("A REALTIME PRESENTATION SYSTEM")}</p><h1>{current?.title}</h1><p>{current?.body}</p></div>
+        {data.isHost && current?._id === data.slides[0]?._id && !data.presentation.showConclusions && <JoinCard slug={slug} onExpand={() => setInviteOpen(true)} />}
         {current?.imageUrl && <figure className="slide-image"><img src={current.imageUrl} alt="Related visual" referrerPolicy="no-referrer" />{current.imageSourceUrl && <figcaption><a href={current.imageSourceUrl} target="_blank" rel="noreferrer">Image source ↗</a></figcaption>}</figure>}
         {current?.visual && <ClientOnly fallback={<p>{tr("Preparando visualización…")}</p>}><Suspense fallback={<p>{tr("Preparando visualización…")}</p>}><LiveVisual presentationId={data.presentation._id} visual={current.visual} reactions={reactions} /></Suspense></ClientOnly>}
         {isPoll && <div className="poll-results">{current.choices?.map((choice) => { const value = votes[choice.id] ?? 0; const pct = totalVotes ? Math.round(value / totalVotes * 100) : 0; return <button key={choice.id} onClick={() => void vote({ presentationId: data.presentation._id, slideId: current._id, choiceId: choice.id }).catch(error => setNotice(friendlyError(error)))}><span>{choice.label}</span><strong>{pct}%</strong><i style={{ width: `${Math.max(pct, 2)}%` }} /></button>; })}<small>{totalVotes} {tr("live votes")}</small></div>}
@@ -172,7 +179,7 @@ function Launchpad({ onCreate, notice, account, history, onAccount }: { onCreate
   useTranslation();
   const [busy,setBusy] = useState(false);
   const [code,setCode] = useState("");
-  return <main className="launchpad"><div className="hero-grid"><div className="landing-top"><span className="eyebrow">{tr("SLIDEX / BETA")}</span><div className="landing-actions"><button className="account-link" onClick={onAccount}>{account?.isAnonymous ? "Save your work" : "My presentations"}{history?.length ? ` (${history.length})` : ""}</button><LanguagePicker /></div></div><h1>{tr("Tu próxima charla,")}<br /><em>{tr("viva.")}</em></h1><p>{tr("Una presentación que escucha. Tu audiencia propone, la web aporta y las mejores ideas llegan al escenario.")}</p><button disabled={busy} onClick={async () => { setBusy(true); try { await onCreate(); } finally { setBusy(false); } }}>{busy ? tr("Creando tu sala…") : tr("Crear una sala en vivo")} <span>↗</span></button>{notice && <p role="alert">{notice}</p>}<form className="join-form" onSubmit={event => { event.preventDefault(); window.location.assign(`?room=${encodeURIComponent(code.trim().toUpperCase())}`); }}><label htmlFor="room-code">{tr("¿Vienes como audiencia?")}</label><div><input id="room-code" required pattern="[Ll][Ii][Vv][Ee]-[A-Za-z0-9]+" maxLength={20} value={code} onChange={e => setCode(e.target.value)} placeholder={tr("Código LIVE-XXXXX")}/><button disabled={!code.trim()}>{tr("Unirme →")}</button></div></form><small>{tr("Convex · OpenAI · Firecrawl · AgentMail")}</small></div><div className="manifesto"><div className="signal">✦</div><p>{tr("“El último slide todavía no existe. Lo escribirá tu audiencia.”")}</p><div className="feature-list"><span>{tr("01 · Crea tu sala y comparte el enlace")}</span><span>{tr("02 · Presenta, escucha y acepta ideas")}</span><span>{tr("03 · Cierra con lo que descubrieron juntos")}</span></div></div></main>;
+  return <main className="launchpad"><div className="hero-grid"><div className="landing-top"><span className="eyebrow">{tr("SLIDEX / BETA")}</span><div className="landing-actions"><button className="account-link" onClick={onAccount}>{account?.isAnonymous ? "Save your work" : "My presentations"}{history?.length ? ` (${history.length})` : ""}</button><LanguagePicker /></div></div><h1>{tr("Tu próxima charla,")}<br /><em>{tr("viva.")}</em></h1><p>{tr("Una presentación que escucha. Tu audiencia propone, la web aporta y las mejores ideas llegan al escenario.")}</p><button disabled={busy} onClick={async () => { setBusy(true); try { await onCreate(); } finally { setBusy(false); } }}>{busy ? tr("Creando tu sala…") : tr("Crear una sala en vivo")} <span>↗</span></button>{notice && <p role="alert">{notice}</p>}<form className="join-form" onSubmit={event => { event.preventDefault(); window.location.assign(`?room=${encodeURIComponent(code.trim().toUpperCase().startsWith("LIVE-") ? code.trim().toUpperCase() : `LIVE-${code.trim().toUpperCase()}`)}`); }}><label htmlFor="room-code">{tr("¿Vienes como audiencia?")}</label><div><input id="room-code" required pattern="([Ll][Ii][Vv][Ee]-)?[A-Za-z0-9]{5}" maxLength={20} value={code} onChange={e => setCode(e.target.value)} placeholder={tr("Código LIVE-XXXXX")}/><button disabled={!code.trim()}>{tr("Unirme →")}</button></div></form><small>{tr("Convex · OpenAI · Firecrawl · AgentMail")}</small></div><div className="manifesto"><div className="signal">✦</div><p>{tr("“El último slide todavía no existe. Lo escribirá tu audiencia.”")}</p><div className="feature-list"><span>{tr("01 · Crea tu sala y comparte el enlace")}</span><span>{tr("02 · Presenta, escucha y acepta ideas")}</span><span>{tr("03 · Cierra con lo que descubrieron juntos")}</span></div></div></main>;
 }
 
 type PasswordResult = { status: "complete" | "error"; userError?: { error: string; minimumLength?: number; retryAfterMs?: number } };

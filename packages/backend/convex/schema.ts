@@ -34,6 +34,13 @@ export default defineSchema({
     createdAt: v.number(),
     showConclusions: v.optional(v.boolean()),
     voiceEnabled: v.optional(v.boolean()),
+    countdown: v.optional(v.object({
+      durationSeconds: v.number(),
+      remainingMs: v.number(),
+      endsAt: v.optional(v.number()),
+      updatedAt: v.number(),
+    })),
+    jdLastCommand: v.optional(v.object({ requestId: v.string(), reply: v.string() })),
     agentInboxId: v.optional(v.string()),
     moment: v.optional(v.object({ caption: v.string(), imageUrl: v.optional(v.string()), sourceUrl: v.optional(v.string()), createdAt: v.number() })),
   }).index("by_slug", ["slug"]).index("by_agentInboxId", ["agentInboxId"]).index("by_ownerId", ["ownerId"]),
