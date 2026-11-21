@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import { makeFunctionReference } from "convex/server";
 import { convexTest } from "convex-test";
 import { expect, test } from "vitest";
 import { api } from "./_generated/api";
@@ -115,15 +116,16 @@ test("AI drafts stay private, dismiss cancels late results and publishing is ato
   expect((await host.query(api.interventions.list, { slideId: updated.slides[3]._id }))[0].status).toBe("dismissed");
 });
 
-test("English rooms and visual slides use the requested language without rewriting existing content", async () => {
+test("informational visuals cannot create slides; English rooms preserve their language", async () => {
   const { host, room, data } = await fixture();
   const en = await host.mutation(api.presentations.createDemo, { ownerName: "Presenter", locale: "en" });
   const english = (await host.query(api.presentations.getBySlug, { slug: en.slug }))!;
   expect(english.slides[0].title).toBe("The next big idea is in this room.");
   expect(english.slides[1].choices?.[1].label).toBe("Live research");
-  const visual = await host.mutation(api.live.addVisual, { presentationId: en.presentationId, visual: "pulse", locale: "en" });
+  await expect(host.mutation(makeFunctionReference<"mutation">("live:addVisual"), { presentationId: en.presentationId, visual: "pulse", locale: "en" })).rejects.toThrow();
   const updated = (await host.query(api.presentations.getBySlug, { slug: en.slug }))!;
-  expect(updated.slides.find(s => s._id === visual)?.title).toBe("This is how the room feels.");
+  expect(updated.slides).toEqual(english.slides);
+  expect(updated.presentation.currentSlideId).toBe(english.presentation.currentSlideId);
   expect((await host.query(api.presentations.getBySlug, { slug: room.slug }))!.slides[0].body).toBe(data.slides[0].body);
 });
 
@@ -151,4 +153,15 @@ test("hosts can edit the opening slide, attach an image, and reorder the deck", 
     imageUrl: "https://images.example.com/opening.jpg",
     imageSourceUrl: "https://example.com/opening",
   });
+});
+
+test("room reactions include the latest events after the 200-event window fills", async () => {
+  const { t, host, room, data } = await fixture();
+  const latest = await t.run(async ctx => {
+    for (let i = 0; i < 205; i++) await ctx.db.insert("reactions", { presentationId: room.presentationId, slideId: data.slides[i % 3]._id, attendeeId: "fixture", emoji: "fire", createdAt: i });
+    return ctx.db.insert("reactions", { presentationId: room.presentationId, slideId: data.slides[0]._id, attendeeId: "fixture", emoji: "heart", createdAt: 206 });
+  });
+  const updated = (await host.query(api.presentations.getBySlug, { slug: room.slug }))!;
+  expect(updated.reactions).toHaveLength(200);
+  expect(updated.reactions[0]._id).toBe(latest);
 });

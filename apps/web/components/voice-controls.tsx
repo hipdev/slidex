@@ -6,7 +6,7 @@ import { api } from "@slidex/backend/api";
 import type { Doc, Id } from "@slidex/backend/data-model";
 
 type Recognition = { lang:string; continuous:boolean; interimResults:boolean; onresult:((e:{resultIndex:number;results:{length:number;[n:number]:{isFinal:boolean;[n:number]:{transcript:string}}}})=>void)|null; onerror:((e:{error:string})=>void)|null; onend:(()=>void)|null; onstart:(()=>void)|null; start:()=>void; stop:()=>void; abort:()=>void };
-export function VoiceControls({ room, slides, report, active = true }: { active?: boolean; room: Doc<"presentations">; slides: Doc<"slides">[]; report:(message:string)=>void }) {
+export function VoiceControls({ room, slides, report, onVisual, active = true }: { onVisual: (view: "constellation" | "pulse") => void; active?: boolean; room: Doc<"presentations">; slides: Doc<"slides">[]; report:(message:string)=>void }) {
   useTranslation();
   const locale = useLocale();
   const [listening,setListening]=useState(false);
@@ -23,7 +23,6 @@ export function VoiceControls({ room, slides, report, active = true }: { active?
   const moments=useMutation(api.moments.request);
   const navigate=useMutation(api.presentations.setCurrentSlide);
   const research=useMutation(api.research.request);
-  const visual=useMutation(api.live.addVisual);
   const propose=useMutation(api.interventions.propose);
   const prepare=useMutation(api.interventions.prepare);
   const props=useRef({room,slides}); props.current={room,slides};
@@ -39,8 +38,8 @@ export function VoiceControls({ room, slides, report, active = true }: { active?
       else report(tr("Ya estás en el extremo de la presentación"));
     } else if(/^(mostrar |muestra |abrir )?(el )?cierre$/.test(words) || /^(show )?takeaways$/.test(words)) await settings({presentationId:room._id,showConclusions:true});
     else if(/^(volver|volver al slide|back to slide)$/.test(words))await settings({presentationId:room._id,showConclusions:false});
-    else if(/^(crear |muestra |mostrar )?(una )?constelacion$/.test(words) || /^(show )?constellation$/.test(words))await visual({presentationId:room._id,visual:"constellation",locale});
-    else if(words==="pulso" || words==="mostrar pulso" || words==="pulse")await visual({presentationId:room._id,visual:"pulse",locale});
+    else if(/^(crear |muestra |mostrar )?(una )?constelacion$/.test(words) || /^(show )?constellation$/.test(words))onVisual("constellation");
+    else if(words==="pulso" || words==="mostrar pulso" || words==="pulse")onVisual("pulse");
     else if((words === "explica mas facil" || words === "explain simply") || words.startsWith("plot twist ")) {
       if (!room.currentSlideId) return;
       const id = await propose({presentationId:room._id,slideId:room.currentSlideId,kind:(words === "explica mas facil" || words === "explain simply") ? "lost" : "twist",text:words.startsWith("plot twist ") ? text.replace(/^(slidex[,\s]*)?plot twist\s+/i, "").slice(0,300) : undefined});

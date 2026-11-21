@@ -76,7 +76,7 @@ export const getBySlug = query({
     if (!presentation && /^[A-Z0-9]{4,5}$/.test(code)) presentation = await ctx.db.query("presentations").withIndex("by_slug", q => q.eq("slug", `LIVE-${code}`)).unique();
     if (!presentation) return null;
     const slides = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", presentation._id)).take(50);
-    const reactions = await ctx.db.query("reactions").withIndex("by_presentation_and_slide", (q) => q.eq("presentationId", presentation._id)).take(200);
+    const reactions = await ctx.db.query("reactions").withIndex("by_presentationId", (q) => q.eq("presentationId", presentation._id)).order("desc").take(200);
     const votes = await ctx.db.query("votes").withIndex("by_presentation_and_slide", (q) => q.eq("presentationId", presentation._id)).take(200);
     const userId = await getAuthUserId(ctx);
     const isHost = !!userId && presentation.ownerId === userId;

@@ -6,18 +6,18 @@ import { useQuery } from "convex/react";
 import { api } from "@slidex/backend/api";
 import type { Id } from "@slidex/backend/data-model";
 
-export default function LiveVisual({ presentationId, visual, reactions }: { presentationId: Id<"presentations">; visual: "constellation" | "pulse"; reactions: Record<string, number> }) {
+export default function LiveVisual({ presentationId, visual, reactions, scope = "slide" }: { presentationId: Id<"presentations">; visual: "constellation" | "pulse"; reactions: Record<string, number>; scope?: "slide" | "room" }) {
   useTranslation();
   const ideas = useQuery(api.live.list, { presentationId });
-  const visible = (ideas ?? []).filter(i => i.status !== "dismissed");
-  return <div className="live-visual">{visual === "constellation" ? <><Constellation weights={visible.map(i => i.votes)} /><div className="visual-caption"><b>{visible.length} {tr("ideas ·")} {visible.reduce((n,i)=>n+i.votes,0)} {tr("apoyos")}</b><span>{tr("Cada esfera es una idea. Sus apoyos le dan tamaño.")}</span></div><div className="idea-orbit">{visible.slice(0,4).map(i => <span key={i._id}>{i.text}</span>)}</div></> : <Pulse reactions={reactions} />}</div>;
+  const visible = (ideas ?? []).filter(i => i.status !== "dismissed").sort((a,b) => b.votes-a.votes);
+  return <div className="live-visual">{visual === "constellation" ? <><Constellation weights={visible.map(i => i.votes)} /><div className="visual-caption"><b>{visible.length} {tr("ideas ·")} {visible.reduce((n,i)=>n+i.votes,0)} {tr("apoyos")}</b><span>{tr("Cada esfera es una idea. Sus apoyos le dan tamaño.")}</span></div><div className="idea-orbit">{visible.slice(0,4).map(i => <span key={i._id}>{i.text}</span>)}</div></> : <Pulse reactions={reactions} scope={scope} />}</div>;
 }
-function Pulse({ reactions }: { reactions: Record<string,number> }) {
+function Pulse({ reactions, scope }: { reactions: Record<string,number>; scope: "slide" | "room" }) {
   useTranslation();
   const rows = [{ key: "fire", label: tr("Me inspira"), color: "#fd975b" }, { key: "mind", label: tr("Me sorprende"), color: "#b9a0ff" }, { key: "heart", label: tr("Me encanta"), color: "#ff88bd" }, { key: "question", label: tr("Tengo preguntas"), color: "#d4ff43" }];
   const x = scaleLinear().domain([0, Math.max(5, ...Object.values(reactions))]).range([0,310]);
   const y = scaleBand().domain(rows.map(r=>r.key)).range([15,235]).padding(.32);
-  return <><svg viewBox="0 0 510 265" role="img" aria-label={tr("Reacciones de la audiencia en tiempo real")}>{rows.map(row => <g key={row.key} transform={`translate(0 ${y(row.key)})`}><text x="0" y="24" fill="#efedf8" fontSize="13">{row.label}</text><rect x="145" width={x(reactions[row.key] ?? 0)} height={y.bandwidth()} rx="6" fill={row.color}/><text x={155+x(reactions[row.key] ?? 0)} y="24" fill="#fff" fontSize="16">{reactions[row.key] ?? 0}</text></g>)}</svg><p className="visual-caption">{tr("Datos reales de este slide · Reacciona y mira cómo cambia.")}</p></>;
+  return <><svg viewBox="0 0 510 265" role="img" aria-label={tr("Reacciones de la audiencia en tiempo real")}>{rows.map(row => <g key={row.key} transform={`translate(0 ${y(row.key)})`}><text x="0" y="24" fill="#efedf8" fontSize="13">{row.label}</text><rect x="145" width={x(reactions[row.key] ?? 0)} height={y.bandwidth()} rx="6" fill={row.color}/><text x={155+x(reactions[row.key] ?? 0)} y="24" fill="#fff" fontSize="16">{reactions[row.key] ?? 0}</text></g>)}</svg><p className="visual-caption">{tr(scope === "room" ? "Las 200 reacciones más recientes de la presentación · En tiempo real." : "Datos reales de este slide · Reacciona y mira cómo cambia.")}</p></>;
 }
 function Constellation({ weights }: { weights: number[] }) {
   useTranslation();

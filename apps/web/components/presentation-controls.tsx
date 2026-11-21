@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { tr } from "../i18n/provider";
 
-export function PresentationControls({ onExit, onPrevious, onNext, hasPrevious, hasNext, position, onInvite }: {
+export function PresentationControls({ onExit, onPrevious, onNext, hasPrevious, hasNext, position, onInvite, onRoom }: {
   onExit: () => void; onPrevious?: () => void; onNext?: () => void;
-  hasPrevious: boolean; hasNext: boolean; position: string; onInvite?: () => void;
+  hasPrevious: boolean; hasNext: boolean; position: string; onInvite?: () => void; onRoom?: () => void;
 }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [expanded, setExpanded] = useState(true);
@@ -64,6 +64,7 @@ export function PresentationControls({ onExit, onPrevious, onNext, hasPrevious, 
     {onPrevious && <button aria-label={tr("← Anterior")} disabled={!hasPrevious} onClick={onPrevious}>←</button>}
     <span>{position}</span>
     {onNext && <button aria-label={tr("Siguiente →")} disabled={!hasNext} onClick={onNext}>→</button>}
+    {onRoom && <button aria-label={tr("Ver ideas y pulso de la sala")} onClick={onRoom}>◉</button>}
     {onInvite && <button onClick={onInvite}>{tr("Mostrar QR")}</button>}
     <button onClick={async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch { /* The distraction-free view remains available when fullscreen is unsupported. */ } }}>{tr(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}</button>
     <button onClick={onExit}>{tr("Salir del escenario")}</button>

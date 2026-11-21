@@ -110,7 +110,7 @@ export default defineSchema({
     attendeeId: v.string(),
     emoji: v.union(v.literal("fire"), v.literal("mind"), v.literal("heart"), v.literal("question")),
     createdAt: v.number(),
-  }).index("by_presentation_and_slide", ["presentationId", "slideId"]),
+  }).index("by_presentationId", ["presentationId"]).index("by_presentation_and_slide", ["presentationId", "slideId"]),
   votes: defineTable({
     presentationId: v.id("presentations"),
     slideId: v.id("slides"),

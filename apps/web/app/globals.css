@@ -657,3 +657,60 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .account-dialog .history-delete-confirm [role="alert"] { color:#a52d25; margin-top:10px; }
 .account-dialog .history-notice { color:#526830; }
 .history-delete:focus:not(:focus-visible),.presentation-history h3:focus:not(:focus-visible) { outline:none; }
+
+/* Participation stays within reach while the slide remains the main stage. */
+.slide-participation { position:relative; z-index:3; display:grid; gap:6px; margin:14px 0; width:max-content; max-width:100%; }
+.slide-participation>small { font-size:10px; font-weight:700; color:#694a3c; padding:0 4px; }
+.slide-participation-actions { display:flex; gap:6px; }
+.slide-participation-actions button { display:flex; align-items:center; justify-content:center; gap:5px; min-width:44px; min-height:48px; padding:8px 10px; border:1px solid #b89686; border-radius:13px; background:#fffaf4; color:#432c22; }
+.slide-participation-actions button:hover { background:#ffe6d3; }
+.slide-participation-actions button>span { font-size:21px; }
+.slide-participation-actions button>b { font-size:11px; font-variant-numeric:tabular-nums; }
+.slide-participation-actions .participation-ideas { background:#432c22; color:#fffaf4; font-size:12px; font-weight:800; }
+.audience-reactions { position:fixed; z-index:25; left:50%; bottom:max(10px,env(safe-area-inset-bottom)); transform:translateX(-50%); max-width:calc(100% - 20px); padding:9px 10px; border:1px solid #c7aa98; border-radius:20px; background:#fffaf4f5; box-shadow:0 6px 30px #432c2233; }
+.audience-reactions .slide-participation { margin:0; }
+.audience-view { padding-bottom:120px; }
+.audience-view .stage { padding-bottom:110px; }
+.audience-view .jd-spectator { bottom:118px; }
+.presentation-mode.audience-view .audience-reactions { bottom:44px; }
+.presentation-mode.audience-view:has(.presentation-controls.is-expanded) .audience-reactions { bottom:112px; }
+.presentation-mode.audience-view .jd-spectator { bottom:155px; }
+.presentation-mode.audience-view:has(.presentation-controls.is-expanded) .jd-spectator { bottom:222px; }
+.presentation-mode.audience-view .stage { padding-bottom:220px; }
+.reaction-effects { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:8; border-radius:inherit; }
+.reaction-effects>span { position:absolute; bottom:15%; font-size:clamp(30px,5vw,54px); animation:audience-emoji 2300ms ease-out both; }
+@keyframes audience-emoji { 0% { opacity:0; transform:translate(0,35px) scale(.6); } 15% { opacity:1; } 80% { opacity:1; } 100% { opacity:0; transform:translate(var(--reaction-drift),-300px) scale(1.2) rotate(12deg); } }
+.room-insights { border:0; border-radius:24px; padding:0; margin:auto; width:min(800px,calc(100% - 28px)); max-height:calc(100dvh - 28px); background:#fffaf4; color:#432c22; overflow:auto; box-shadow:0 24px 90px #241a1855; }
+.room-insights::backdrop { background:#21161099; backdrop-filter:blur(5px); }
+.room-insights-content { position:relative; padding:32px; }
+.room-insights h2 { font:600 clamp(28px,5vw,42px)/1.15 'Playfair Display',Georgia,serif; margin:12px 36px 22px 0; }
+.room-insights .eyebrow { font-size:10px; color:#73574a; }
+.room-insights .tabs { background:#eee1d5; }
+.room-insights .tabs button { color:#684b3d; }
+.room-insights .tabs button[aria-pressed=true] { background:#432c22; color:white; }
+.room-insights .collab-panel { margin:22px 0 0; max-width:none; }
+.room-insights .panel-title .eyebrow,.room-insights .panel-hint,.room-insights .empty { color:#73574a; }
+.room-insights .contribution { background:#fff5e9; border-color:#c5a490; }
+.room-insights .contribution-meta { color:#73574a; }
+.room-insights .contribution-actions button,.room-insights .secondary { color:#583529; border-color:#a98068; }
+.room-insights .contribution-actions button[aria-pressed=true] { background:#ead5c0; }
+.room-insights form { display:grid; gap:10px; }
+.room-insights label { font-size:13px; font-weight:700; }
+.room-insights input,.room-insights textarea,.room-insights select { width:100%; padding:12px; border:1px solid #b89686; border-radius:10px; background:white; color:#432c22; font-size:16px; }
+.room-insights .primary { background:var(--brand); color:white; border:0; padding:12px; }
+.room-view-description { font-size:14px; line-height:1.6; color:#73574a; }
+.room-visual-loading { min-height:360px; display:grid; place-items:center; }
+.ideas-heading { margin:0; font-size:16px; }
+.idea-rank { display:inline-block; margin-right:8px; font-size:11px; opacity:.7; }
+.compose-idea { width:100%; text-align:left; }
+@media(max-width:540px) {
+  .slide-participation-actions { gap:4px; }
+  .slide-participation-actions button { padding:6px 7px; }
+  .audience-reactions { padding:8px; }
+  .room-insights-content { padding:26px 18px; }
+  .room-insights .contribution-list { max-height:45dvh; }
+  .presentation-controls-panel>span { display:none; }
+  .presentation-controls-panel { gap:1px; padding:4px; }
+  .presentation-controls button { padding:6px 4px; }
+}
+@media(prefers-reduced-motion:reduce) { .reaction-effects>span { animation:none; } }

@@ -35,7 +35,7 @@ export function BookStage({ children, className, slideId, cue }: { children: Rea
     }
     const snapshot = element.cloneNode(true) as HTMLElement;
     snapshot.removeAttribute("id"); snapshot.setAttribute("aria-hidden", "true"); snapshot.inert = true;
-    snapshot.querySelectorAll("[data-book-overlay], [data-jd-spectator], .countdown").forEach(node => node.remove());
+    snapshot.querySelectorAll("[data-reaction-effects], [data-book-overlay], [data-jd-spectator], .countdown").forEach(node => node.remove());
     snapshot.querySelectorAll("[id]").forEach(node => node.removeAttribute("id"));
     // Canvas pixels aren't cloned by the DOM. Keep their geometry without
     // presenting an empty interactive visualization on the outgoing page.
