@@ -896,3 +896,4 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 @media(max-width:680px) { .pricing-layout { grid-template-columns:1fr; gap:18px; }.pricing-cloud caption { padding:16px 12px; font-size:12px; }.pricing-cloud th,.pricing-cloud td { padding:11px 8px; }.pricing-cloud thead th { font-size:11px; }.pricing-cloud tbody th { font-size:12px; }.pricing-cloud td { font-size:14px; }.pricing-selfhost { padding:22px; }.pricing-selfhost h2 { font-size:30px; }.pricing-selfhost ul { font-size:15px; }.pricing-sources { align-items:flex-start; flex-direction:column; gap:12px; }.pricing-sources>span { font-size:10px; } }
 .pricing-license p,.pricing-portability { font-size:15px; }
 .pricing-selfhost ul { font-size:clamp(15px,1.2vw,19px); }
+@media(min-width:681px) { .story-photo-image { object-position:center bottom; } }
