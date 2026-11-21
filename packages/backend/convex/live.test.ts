@@ -165,3 +165,14 @@ test("room reactions include the latest events after the 200-event window fills"
   expect(updated.reactions).toHaveLength(200);
   expect(updated.reactions[0]._id).toBe(latest);
 });
+
+test("slide layouts are owner-controlled and preserved for clients that omit the layout", async () => {
+  const {host,guest,room,data}=await fixture();
+  const args={presentationId:room.presentationId,slideId:data.slides[2]._id,title:"Visual story",body:"Datos | En vivo",layout:"services" as const};
+  await expect(guest.mutation(api.live.saveSlide,args)).rejects.toThrow("Only the presentation host");
+  await host.mutation(api.live.saveSlide,args);
+  await host.mutation(api.live.saveSlide,{presentationId:args.presentationId,slideId:args.slideId,title:"Updated text",body:args.body});
+  const updated=(await host.query(api.presentations.getBySlug,{slug:room.slug}))!;
+  expect(updated.slides[2].layout).toBe("services");
+  expect(updated.slides[0].layout).toBeUndefined();
+});

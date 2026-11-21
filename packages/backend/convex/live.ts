@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query } from "./_generated/server";
 import { requireOwner, requireSlide } from "./presentations";
-import schema from "./schema";
+import schema, { slideLayout } from "./schema";
 
 export const list = query({
   args: { presentationId: v.id("presentations") },
@@ -73,7 +73,7 @@ export const settings = mutation({
 });
 
 export const saveSlide = mutation({
-  args: { presentationId: v.id("presentations"), slideId: v.optional(v.id("slides")), title: v.string(), body: v.string(), imageUrl: v.optional(v.string()), imageSourceUrl: v.optional(v.string()) }, returns: v.id("slides"),
+  args: { presentationId: v.id("presentations"), slideId: v.optional(v.id("slides")), title: v.string(), body: v.string(), layout: v.optional(slideLayout), imageUrl: v.optional(v.string()), imageSourceUrl: v.optional(v.string()) }, returns: v.id("slides"),
   handler: async (ctx, args) => {
     await requireOwner(ctx,args.presentationId);
     const title=args.title.trim(); const body=args.body.trim();
@@ -81,7 +81,7 @@ export const saveSlide = mutation({
     const imageUrl = args.imageUrl?.trim();
     const imageSourceUrl = args.imageSourceUrl?.trim();
     if ((imageUrl && !/^https:\/\//i.test(imageUrl)) || (imageSourceUrl && !/^https?:\/\//i.test(imageSourceUrl))) throw new Error("Use a valid image URL");
-    const imagePatch = { imageUrl: imageUrl || undefined, imageSourceUrl: imageSourceUrl || undefined };
+    const imagePatch = { ...(args.layout !== undefined ? { layout: args.layout } : {}), imageUrl: imageUrl || undefined, imageSourceUrl: imageSourceUrl || undefined };
     if(args.slideId){await requireSlide(ctx,args.presentationId,args.slideId);await ctx.db.patch(args.slideId,{title,body,...imagePatch});return args.slideId;}
     const last=await ctx.db.query("slides").withIndex("by_presentation_and_order",q=>q.eq("presentationId",args.presentationId)).order("desc").first();
     if((last?.order??0)>=49)throw new Error("This deck has reached its 50 slide limit");

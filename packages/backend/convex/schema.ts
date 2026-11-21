@@ -1,6 +1,8 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+export const slideLayout = v.union(v.literal("standard"), v.literal("photo"), v.literal("reactivity"), v.literal("services"));
+
 const slideKind = v.union(
   v.literal("title"),
   v.literal("content"),
@@ -63,6 +65,7 @@ export default defineSchema({
     presentationId: v.id("presentations"),
     order: v.number(),
     kind: slideKind,
+    layout: v.optional(slideLayout),
     title: v.string(),
     body: v.string(),
     choices: v.optional(v.array(v.object({ id: v.string(), label: v.string() }))),
