@@ -30,6 +30,12 @@ export function ServiceIcon({ index, title = "" }: { index: number; title?: stri
 }
 
 export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
+  if (slide.layout === "rebask") return <div className="story-rebask">
+    <div className="rebask-brand"><span className="rebask-mark" aria-hidden="true">R</span><span>Rebask</span><span className="rebask-stack">React + Vite</span></div>
+    <div className="rebask-layout"><div className="rebask-editorial"><span className="story-kicker">EL FRAMEWORK DE ESTA PRESENTACIÓN</span><h1>{slide.title}</h1><div className="rebask-features">{slide.body.split("\n").filter(line=>line.trim()).slice(0,3).map((line,index)=><div key={index}><span>0{index+1}</span><h2>{line}</h2></div>)}</div><div className="rebask-command"><span aria-hidden="true">$</span><code>pnpm create rebask-app</code></div></div>
+    <aside className="rebask-creator"><img src="/images/rebask/lfades.jpg" alt="Luis Alvarez, LFades"/><div className="rebask-creator-copy"><span className="story-kicker">SU CREADOR</span><h2>Luis Alvarez</h2><a href="https://lfades.com" target="_blank" rel="noreferrer">@lfades ↗</a><p>Ingeniero en Vercel.<br/>Creador de Rebask.</p></div></aside></div>
+    <footer className="rebask-footer"><span>Slidex corre sobre Rebask.</span><a href="https://www.rebask.com" target="_blank" rel="noreferrer">rebask.com ↗</a></footer>
+  </div>;
   if (slide.layout === "photo" && slide.imageUrl) return <div className="story-photo">
     <img className="story-photo-image" src={slide.imageUrl} alt={slide.title} />
     <div className="story-photo-shade" />
