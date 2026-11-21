@@ -1,6 +1,7 @@
 "use client";
 
 import type { Doc } from "@slidex/backend/data-model";
+import { useEffect, useRef } from "react";
 import { tr } from "../i18n/provider";
 
 const brand = "/images/convex/logo-color.svg";
@@ -30,6 +31,7 @@ export function ServiceIcon({ index, title = "" }: { index: number; title?: stri
 }
 
 export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
+  if (slide.layout === "demo") return <DemoSlide slide={slide} />;
   if (slide.layout === "rebask") return <div className="story-rebask">
     <div className="rebask-brand"><span className="rebask-mark" aria-hidden="true">R</span><span>Rebask</span><span className="rebask-stack">React + Vite</span></div>
     <div className="rebask-layout"><div className="rebask-editorial"><span className="story-kicker">EL FRAMEWORK DE ESTA PRESENTACIÓN</span><h1>{slide.title}</h1><div className="rebask-features">{slide.body.split("\n").filter(line=>line.trim()).slice(0,3).map((line,index)=><div key={index}><span>0{index+1}</span><h2>{line}</h2></div>)}</div><div className="rebask-command"><span aria-hidden="true">$</span><code>pnpm create rebask-app</code></div></div>
@@ -77,6 +79,20 @@ export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
     </div>;
   }
   return <><div className="slide-copy"><h1>{slide.title}</h1><p>{slide.body}</p></div>{slide.imageUrl && <figure className="slide-image"><img src={slide.imageUrl} alt={slide.title} /></figure>}</>;
+}
+
+function DemoSlide({ slide }: { slide: Doc<"slides"> }) {
+  const video = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const player = video.current;
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const stop = () => { if (preference.matches || document.hidden) player?.pause(); };
+    if (!preference.matches && !document.hidden) void player?.play().catch(() => {});
+    preference.addEventListener("change", stop);
+    document.addEventListener("visibilitychange", stop);
+    return () => { player?.pause(); preference.removeEventListener("change", stop); document.removeEventListener("visibilitychange", stop); };
+  }, []);
+  return <div className="story-demo"><div className="demo-copy"><span className="story-kicker">AHORA SÍ · MANOS A LA OBRA</span><p className="demo-quote">A lo que yo vine<br/>fue a esto…</p><h1>{slide.title}</h1><p className="demo-subtitle">{slide.body}</p><div className="demo-stack"><img src={symbol} alt="Convex"/><span>Ideas → productos reales</span></div></div><figure className="demo-meme"><div className="demo-sticker">DEMO TIME ↗</div><video ref={video} src="/images/demo/a-lo-que-yo-vine.mp4" muted loop playsInline controls preload="auto" aria-label="Meme: A lo que yo vine fue a esto"/><figcaption><span>El mood de este momento.</span><a href="https://tenor.com/view/a-lo-que-yo-vine-fue-a-esto-adivina-qu%C3%A9-hago-bartender-acrobatico-fremantle-gif-1876391802803682162" target="_blank" rel="noreferrer">GIF · adivinaquehago / Tenor ↗</a></figcaption></figure></div>;
 }
 
 function ReactivityDiagram() {

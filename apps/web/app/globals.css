@@ -920,4 +920,20 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .rebask-creator p { font-size:clamp(16px,1.5vw,23px); line-height:1.5; color:#e1e8db; margin:20px 0 0; }
 .rebask-footer { display:flex; justify-content:space-between; flex-wrap:wrap; gap:16px; font-size:13px; color:#52604e; margin-top:36px; }
 .rebask-footer a { text-decoration:underline; }
+.stage.design-demo { background:radial-gradient(ellipse at 90% 20%,#453255 0,transparent 55%),#1c1823; color:#fff9eb; }
+.stage.design-demo:before,.stage.design-demo:after { display:none; }
+.stage.design-demo .stage-meta,.stage.design-demo .slide-footer,.stage.design-demo .slide-participation>small { color:#e1cfc6; }
+.story-demo { display:grid; grid-template-columns:1.25fr 1fr; align-items:center; gap:6%; padding:36px 0; }
+.demo-copy>.story-kicker { color:#d4e88d; }
+.demo-quote { font-size:clamp(30px,3.2vw,54px); line-height:1.15; letter-spacing:-.035em; margin:32px 0 16px; color:#f1ddd6; }
+.demo-copy h1 { font-size:clamp(40px,5.5vw,94px); line-height:1.05; letter-spacing:-.055em; margin:0; color:#d4ed85; overflow-wrap:anywhere; }
+.demo-subtitle { font-size:clamp(19px,1.8vw,30px); line-height:1.4; margin:26px 0 40px; color:#f1ddd6; }
+.demo-stack { display:flex; align-items:center; gap:14px; padding-top:26px; border-top:1px solid #8a7595; font-size:clamp(15px,1.4vw,22px); color:#ded0e5; }
+.demo-stack img { width:38px; height:38px; }
+.demo-meme { width:100%; max-width:460px; justify-self:center; margin:0; position:relative; transform:rotate(2deg); }
+.demo-meme video { display:block; width:100%; aspect-ratio:1; border-radius:22px; border:2px solid #e7c5ad; background:#18131c; box-shadow:14px 16px 0 #0e0b15; }
+.demo-sticker { position:absolute; top:-20px; right:-8px; z-index:1; transform:rotate(-6deg); color:#263019; background:#d4ed85; padding:12px 20px; border-radius:6px; font:600 14px 'DM Mono',monospace; }
+.demo-meme figcaption { display:flex; flex-direction:column; gap:8px; margin:25px 10px 0; font-size:12px; color:#e1cfc6; }
+.demo-meme figcaption a { text-decoration:underline; text-underline-offset:4px; }
+@media(max-width:680px) { .story-demo { grid-template-columns:1fr; gap:40px; padding:14px 0; }.demo-quote { font-size:32px; margin-top:24px; }.demo-copy h1 { font-size:44px; }.demo-subtitle { font-size:20px; margin:18px 0 26px; }.demo-stack { font-size:16px; padding-top:20px; }.demo-meme { width:92%; max-width:340px; transform:none; }.demo-sticker { font-size:11px; }.demo-meme figcaption { font-size:10px; } }
 @media(max-width:680px) { .rebask-brand { font-size:26px; gap:12px; margin:8px 0 30px; }.rebask-mark { width:44px; height:44px; font-size:23px; border-radius:11px; }.rebask-brand .rebask-stack { font-size:10px; }.rebask-layout { grid-template-columns:1fr; gap:28px; }.rebask-editorial h1 { font-size:44px; margin:18px 0 26px; }.rebask-features h2 { font-size:23px; }.rebask-command { font-size:13px; padding:16px; }.rebask-creator { transform:none; display:grid; grid-template-columns:100px 1fr; border-radius:15px; box-shadow:5px 6px 0 #d3dbce; }.rebask-creator>img { width:100%; height:100%; aspect-ratio:auto; }.rebask-creator-copy { padding:18px; }.rebask-creator h2 { font-size:25px; margin-top:10px; }.rebask-creator a { font-size:16px; }.rebask-creator p { font-size:15px; margin-top:12px; }.rebask-footer { font-size:11px; margin-top:28px; } }
