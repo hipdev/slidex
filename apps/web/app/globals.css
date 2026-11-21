@@ -717,3 +717,7 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .jd-cancel { flex:none; display:grid; place-items:center; min-width:48px; min-height:48px; padding:0; border:1px solid #ba6c54; border-radius:50%; background:#fff4ea; color:#8d2e21; font-size:28px; }
 .jd-cancel:hover { background:#ffe0d2; }
 @media(max-width:420px) { .jd-buttons:has(.jd-cancel) .jd-talk { flex:1; min-width:0; padding:10px; gap:6px; font-size:12px; } }
+/* A custom opening photo takes the stage; invitations remain in the toolbar. */
+.stage.opening .slide-image { width:min(100%,1032px); margin:0 auto 18px; flex-shrink:0; }
+.stage.opening .slide-image img { max-height:52dvh; object-fit:contain; }
+@media(max-width:680px) { .stage.opening .slide-image img { max-height:none; } }
