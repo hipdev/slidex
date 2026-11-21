@@ -614,7 +614,7 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .jd-portrait-fallback { display:grid; place-items:center; width:70%; height:70%; margin:15%; border-radius:50%; background:#ffcb38; color:#292532; font:bold 32px/1 'DM Sans',sans-serif; }
 .jd-character-caption { display:flex; align-items:center; justify-content:center; gap:7px; color:#553926; font:500 11px/1.3 'DM Sans',sans-serif; white-space:nowrap; background:#fff8e9; border:1px solid #cfb89c; border-radius:20px; padding:5px 9px; width:fit-content; margin:-9px auto 0; position:relative; }
 .jd-character-caption b { color:#8c3b26; font-family:'DM Mono',monospace; }
-.jd-dock.is-open > .jd-character { position:absolute; top:7px; left:13px; width:76px; margin:0; }
+.jd-dock.is-open > .jd-dock-content > .jd-character { position:absolute; top:7px; left:13px; width:76px; margin:0; }
 .jd-dock.is-open .jd-character-caption { display:none; }
 .jd-dock.is-open .jd-panel > header { padding-left:76px; min-height:70px; }
 .jd-spectator { position:fixed; right:20px; bottom:20px; width:105px; z-index:24; opacity:.65; transition:opacity .25s; }
@@ -633,7 +633,7 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
   .jd-spectator { right:12px; bottom:12px; width:76px; }
   .jd-spectator:not(.is-acting) .jd-character-caption span { display:none; }
   .jd-dock.is-open .jd-panel > header { padding-left:68px; }
-  .jd-dock.is-open > .jd-character { left:7px; width:72px; }
+  .jd-dock.is-open > .jd-dock-content > .jd-character { left:7px; width:72px; }
 }
 @media(prefers-reduced-motion:reduce) { .book-turn-viewport { display:none; } }
 
@@ -756,3 +756,12 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .presentation-mode .stage.content .slide-copy { max-width:1200px; }
 .presentation-mode .stage.content .slide-copy h1 { font-size:clamp(44px,6vw,96px); }
 @media(max-width:680px) { .presentation-mode .stage.content .slide-copy h1 { font-size:clamp(30px,8vw,48px); } }
+
+/* JD can leave the stage while its handle stays available. */
+.jd-dock { transition:transform 320ms cubic-bezier(.22,.8,.24,1),bottom 320ms cubic-bezier(.22,.8,.24,1); }
+.jd-dock.is-collapsed { transform:translateY(calc(100% - 34px)); bottom:max(18px,env(safe-area-inset-bottom)); }
+.jd-dock-content { position:relative; visibility:visible; transition:visibility 0s; }
+.jd-collapse-tab { display:flex; align-items:center; justify-content:center; gap:7px; min-height:34px; margin:0 0 0 auto; padding:5px 14px; border:1px solid #a88670; border-radius:12px 12px 0 0; background:#3d281f; color:#fff2dd; font-size:11px; }
+.jd-collapse-tab:hover { background:#63402c; }
+.jd-collapse-tab:focus-visible { outline-offset:-4px!important; }
+.jd-dock.is-collapsed .jd-dock-content { visibility:hidden; transition-delay:320ms; pointer-events:none; }

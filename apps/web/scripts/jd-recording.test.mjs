@@ -83,3 +83,17 @@ test("closing JD while recording also discards audio", async () => {
     assert.equal(button("jd-close"), undefined);
   });
 });
+
+test("collapsing JD cancels a live recording without sending and leaves a usable handle", async () => {
+  await fixture(async ({ button, calls, stopped }) => {
+    await act(async () => { await button("jd-talk").props.onClick(); });
+    await act(async () => { button("jd-collapse-tab").props.onClick(); });
+    assert.equal(calls.length, 0);
+    assert.equal(stopped(), 1);
+    assert.equal(button("jd-collapse-tab").props["aria-expanded"], false);
+    assert.equal(button("jd-cancel"), undefined);
+    await act(async () => { button("jd-collapse-tab").props.onClick(); });
+    assert.equal(button("jd-collapse-tab").props["aria-expanded"], true);
+    assert.equal(button("jd-talk").props.disabled, false);
+  });
+});

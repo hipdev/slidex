@@ -1,7 +1,7 @@
 "use client";
 
 import { useAction } from "convex/react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { api } from "@slidex/backend/api";
 import type { Id } from "@slidex/backend/data-model";
 import { JDCharacter } from "./jd-character";
@@ -12,6 +12,10 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
   const talk = useAction(api.jd.talk);
   const locale = useLocale();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const collapsedRef = useRef(false);
+  const dockId = useId();
+  const collapseTab = useRef<HTMLButtonElement>(null);
   const [phase, setPhase] = useState<"idle" | "permission" | "recording" | "thinking">("idle");
   const [text, setText] = useState("");
   const [transcript, setTranscript] = useState("");
@@ -53,7 +57,7 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
     };
   }, []);
   const speak = (message: string) => {
-    if (!spoken || !window.speechSynthesis) return;
+    if (!spoken || collapsedRef.current || !window.speechSynthesis) return;
     const token = ++speechGeneration.current;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
@@ -118,8 +122,22 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
   const cancel = () => {
     discardRecording(); setPhase("idle"); setError(""); button.current?.focus();
   };
+  const toggleDock = () => {
+    const next = !collapsedRef.current;
+    collapsedRef.current = next; setCollapsed(next);
+    if (next) {
+      // Hiding a live microphone always discards its recording.
+      if (phase === "recording" || phase === "permission") {
+        discardRecording(); setPhase("idle"); setError("");
+      }
+      speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel();
+      collapseTab.current?.focus({ preventScroll: true });
+    }
+  };
   const submit = (event: FormEvent) => { event.preventDefault(); if (text.trim() && phase === "idle") void send({ text: text.trim() }); };
-  return <div className={`jd-dock ${open ? "is-open" : ""}`}>
+  return <div className={`jd-dock ${open ? "is-open" : ""} ${collapsed ? "is-collapsed" : "is-expanded"}`}>
+    <button ref={collapseTab} type="button" className="jd-collapse-tab" aria-expanded={!collapsed} aria-controls={dockId} onClick={toggleDock}><span aria-hidden="true">{collapsed ? "⌃" : "⌄"}</span>{tr(collapsed ? "Mostrar JD" : "Ocultar JD")}</button>
+    <div id={dockId} className="jd-dock-content" inert={collapsed}>
     <JDCharacter cue={cue} phase={phase === "idle" && speaking ? "speaking" : phase} />
     {open && <section id="jd-panel" className="jd-panel" role="region" aria-label={tr("JD, tu copiloto de voz")} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); close(); } }}>
       <header><div><strong>{tr("JD, tu copiloto de voz")}</strong><small>{tr("Tú hablas. La sala responde.")}</small></div><button disabled={busy} className="jd-close" aria-label={tr("Cerrar JD")} onClick={close}>×</button></header>
@@ -134,5 +152,6 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
       <small className="jd-privacy">{tr("Solo se graba mientras escucho. El audio se procesa en Cloudflare; no se guarda en Slidex.")}</small>
     </section>}
     <div className="jd-buttons"><button ref={button} className={`jd-talk ${phase === "recording" ? "recording" : ""}`} disabled={busy} aria-controls={open ? "jd-panel" : undefined} aria-expanded={open} onClick={() => phase === "recording" ? stop() : void start()}><span aria-hidden="true">{phase === "recording" ? "■" : "✦"}</span>{tr(phase === "recording" ? "Terminar y enviar a JD" : busy ? "JD está pensando…" : "Hablar con JD")}</button>{(phase === "recording" || phase === "permission") && <button type="button" className="jd-cancel" aria-label={tr("Cancelar escucha sin enviar")} title={tr("Cancelar escucha sin enviar")} onClick={cancel}>×</button>}<button className="jd-keyboard" aria-label={tr("Escribir a JD")} aria-expanded={open} onClick={() => { setOpen(true); setTimeout(() => input.current?.focus(), 0); }}>⌨</button></div>
+    </div>
   </div>;
 }
