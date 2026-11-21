@@ -446,5 +446,7 @@
   "¿Cambió algo de lo que leyó?": "Did any of its dependencies change?",
   "Invalida → recalcula → actualiza las pantallas.": "Invalidate → recompute → update the screens.",
   "Bajo el capó": "Under the hood",
-  "De la experiencia en Dropbox a un motor propio.": "From experience at Dropbox to a custom engine."
+  "De la experiencia en Dropbox a un motor propio.": "From experience at Dropbox to a custom engine.",
+  "Read sets: validez": "Read sets: validity",
+  "LRU: libera espacio": "LRU: frees space"
 }

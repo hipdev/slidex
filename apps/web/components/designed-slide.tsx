@@ -49,7 +49,7 @@ export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
       <div className="cache-heading"><div><span className="story-kicker">{tr("EL MOTOR DETRÁS DE LA MAGIA")}</span><h1>{slide.title}</h1></div><img src={symbol} alt="Convex" /></div>
       <div className="cache-flow">{steps.map((step,index) => <article key={index} className={`cache-step cache-step-${index}`}><div className="cache-step-heading"><span>{String(index+1).padStart(2,"0")}</span><ServiceIcon index={[2,0,1][index]} /></div><h2>{step.title}</h2><p>{step.detail}</p>{index<2 && <span className="cache-arrow" aria-hidden="true">→</span>}</article>)}</div>
       <div className="cache-invalidation"><span className="cache-write-icon" aria-hidden="true">↻</span><div><b>{tr("¿Cambió algo de lo que leyó?")}</b><p>{tr("Invalida → recalcula → actualiza las pantallas.")}</p></div><span className="cache-readset-tag">read set</span></div>
-      <div className="cache-foundations"><span>{tr("Bajo el capó")}</span><b>Determinismo</b><b>Read sets</b><b>MVCC</b><b>OCC</b></div>
+      <div className="cache-foundations"><span>{tr("Bajo el capó")}</span><b>Determinismo</b><b>{tr("Read sets: validez")}</b><b>{tr("LRU: libera espacio")}</b><b>MVCC</b><b>OCC</b></div>
       <footer className="cache-history"><a href="https://www.convex.dev/about-us" target="_blank" rel="noreferrer">{tr("De la experiencia en Dropbox a un motor propio.")} ↗</a><a href="https://stack.convex.dev/how-convex-works" target="_blank" rel="noreferrer">{tr("Cómo funciona")} ↗</a></footer>
     </div>;
   }
