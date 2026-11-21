@@ -187,3 +187,12 @@ test("only the owner can rename a presentation; viewers receive the new title", 
   expect(visible?.presentation.title).toBe("De Grandpa a Convex");
   expect(visible?.presentation.slug).toBe(room.slug);
 });
+
+test("a host can publish a caching story layout without altering the existing deck", async () => {
+  const {host,room,data}=await fixture();
+  const id=await host.mutation(api.live.saveSlide,{presentationId:room.presentationId,title:"Read sets",body:"Query | Read dependencies",layout:"cache"});
+  const updated=(await host.query(api.presentations.getBySlug,{slug:room.slug}))!;
+  expect(updated.slides).toHaveLength(data.slides.length+1);
+  expect(updated.slides.at(-1)).toMatchObject({_id:id,layout:"cache",kind:"content"});
+  expect(updated.slides.slice(0,3)).toEqual(data.slides);
+});
