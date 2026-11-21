@@ -64,7 +64,11 @@ Usa elementos React (`title`, `meta`, `link`); no uses el tipo `Metadata` de
 Next.js ni el antiguo `HeadScript` de Rebask. Conjuntify identificó conflictos de
 reconciliación al manipular nodos de metadata que React todavía posee.
 
-El arranque de `app/page.tsx` tiene un `ClientOnly` con texto estático estable.
+El arranque de `app/page.tsx` tiene un `ClientOnly` con la landing estática en español.
+`Launchpad` comparte el markup entre el export y la vista interactiva; la sesión
+invitada se prepara sin sustituir la landing por una pantalla de carga. Las fuentes
+Latin se sirven desde `public/fonts`, con preload y `font-display: optional` para
+evitar un cambio tardío de métricas. Los controles de cuenta reservan su espacio.
 Es deliberado: el efecto del provider de idioma puede ejecutarse antes de que un
 segmento cliente se hidrate. Renderizar allí texto traducido directamente podía
 comparar HTML inglés del build con español guardado y producir React #418.

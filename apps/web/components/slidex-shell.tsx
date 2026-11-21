@@ -9,6 +9,7 @@ import { api } from "@slidex/backend/api";
 import { lazy, Suspense } from "react";
 import { ClientOnly } from "./client-only";
 const LiveVisual = lazy(() => import("./live-visual"));
+import { Launchpad } from "./launchpad";
 import { LanguagePicker } from "../i18n/provider";
 import { AiCompanion, QuickGuide } from "./ai-companion";
 import { SlideEditor } from "./slide-editor";
@@ -66,7 +67,12 @@ function Slidex() {
   const [roomView, setRoomView] = useState<RoomView | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [slug, setSlug] = useState<string | null>(null);
+  const [slug, setSlug] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const short = params.get("r");
+    const value = params.get("room") ?? (short?.length === 5 ? `LIVE-${short}` : short);
+    return value?.toUpperCase() || null;
+  });
   const [researchPrompt, setResearchPrompt] = useState("");
   const [researchUrl, setResearchUrl] = useState("");
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -119,8 +125,8 @@ function Slidex() {
   };
 
   const accountDialog = accountOpen ? <AccountDialog account={account} history={history} onClose={() => setAccountOpen(false)} onSignOut={signOut} /> : null;
+  if (!slug) return <><Launchpad t={tr} ready={!isLoading && isAuthenticated} languagePicker={<LanguagePicker />} onCreate={createRoom} notice={notice} history={history} onAccount={() => setAccountOpen(true)} />{accountDialog}</>;
   if (isLoading || !isAuthenticated) return <><main className="setup"><p className="eyebrow">{tr("CONVEX AUTH")}</p><h1>{tr("Preparando tu entrada…")}</h1>{notice && <p role="alert">{notice}</p>}</main>{accountDialog}</>;
-  if (!slug) return <><Launchpad onCreate={createRoom} notice={notice} account={account} history={history} onAccount={() => setAccountOpen(true)} />{accountDialog}</>;
   if (data === undefined) return <><main className="setup"><p className="eyebrow">{tr("CONNECTING TO")} {slug}</p><h1>{tr("Waking the room…")}</h1></main>{accountDialog}</>;
   if (data === null) return <><main className="setup"><div className="setup-card"><span className="eyebrow">{tr("ROOM NOT FOUND")}</span><h1>{slug} {tr("is not live.")}</h1><button onClick={() => setSlug(null)}>{tr("Create a new live room")}</button></div></main>{accountDialog}</>;
 
@@ -203,12 +209,6 @@ function Slidex() {
   </main>{accountDialog}</>;
 }
 
-function Launchpad({ onCreate, notice, account, history, onAccount }: { onCreate: () => Promise<void>; notice: string; account: { isAnonymous?: boolean } | null | undefined; history: { title: string; slug: string }[] | undefined; onAccount: () => void }) {
-  useTranslation();
-  const [busy,setBusy] = useState(false);
-  const [code,setCode] = useState("");
-  return <main className="launchpad"><div className="hero-grid"><div className="landing-top"><span className="eyebrow">{tr("SLIDEX / BETA")}</span><div className="landing-actions"><button className="account-link" onClick={onAccount}>{account?.isAnonymous ? tr("Guarda tu trabajo") : tr("Mis presentaciones")}{history?.length ? ` (${history.length})` : ""}</button><LanguagePicker /></div></div><h1>{tr("Tu próxima charla,")}<br /><em>{tr("viva.")}</em></h1><p>{tr("Una presentación que escucha. Tu audiencia propone, la web aporta y las mejores ideas llegan al escenario.")}</p><button disabled={busy} onClick={async () => { setBusy(true); try { await onCreate(); } finally { setBusy(false); } }}>{busy ? tr("Creando tu sala…") : tr("Crear una sala en vivo")} <span>↗</span></button>{notice && <p role="alert">{notice}</p>}<form className="join-form" onSubmit={event => { event.preventDefault(); window.location.assign(`?r=${encodeURIComponent(code.trim().toUpperCase())}`); }}><label htmlFor="room-code">{tr("¿Vienes como audiencia?")}</label><div><input id="room-code" required pattern="([Ll][Ii][Vv][Ee]-)?[A-Za-z0-9]{4,5}" maxLength={20} value={code} onChange={e => setCode(e.target.value)} placeholder={tr("Código de la sala")}/><button disabled={!code.trim()}>{tr("Unirme →")}</button></div></form><small>{tr("Convex · OpenAI · Firecrawl · AgentMail")}</small></div><div className="manifesto"><div className="signal">✦</div><p>{tr("“El último slide todavía no existe. Lo escribirá tu audiencia.”")}</p><div className="feature-list"><span>{tr("01 · Crea tu sala y comparte el enlace")}</span><span>{tr("02 · Presenta, escucha y acepta ideas")}</span><span>{tr("03 · Cierra con lo que descubrieron juntos")}</span></div></div></main>;
-}
 
 function countBy<T extends Record<string, unknown>>(items: T[], key: keyof T) {
   return items.reduce<Record<string, number>>((counts, item) => { const value = String(item[key]); counts[value] = (counts[value] ?? 0) + 1; return counts; }, {});
