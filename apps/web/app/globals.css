@@ -714,3 +714,6 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
   .presentation-controls button { padding:6px 4px; }
 }
 @media(prefers-reduced-motion:reduce) { .reaction-effects>span { animation:none; } }
+.jd-cancel { flex:none; display:grid; place-items:center; min-width:48px; min-height:48px; padding:0; border:1px solid #ba6c54; border-radius:50%; background:#fff4ea; color:#8d2e21; font-size:28px; }
+.jd-cancel:hover { background:#ffe0d2; }
+@media(max-width:420px) { .jd-buttons:has(.jd-cancel) .jd-talk { flex:1; min-width:0; padding:10px; gap:6px; font-size:12px; } }

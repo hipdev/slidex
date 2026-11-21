@@ -31,15 +31,25 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
 
   function release() {
     if (timeout.current) clearTimeout(timeout.current);
+    timeout.current = null;
     stream.current?.getTracks().forEach(track => track.stop());
     stream.current = null;
+  }
+  function discardRecording() {
+    generation.current++;
+    const recording = recorder.current;
+    recorder.current = null;
+    if (recording) {
+      recording.onstop = null; recording.ondataavailable = null; recording.onerror = null;
+      if (recording.state !== "inactive") recording.stop();
+    }
+    release();
   }
   useEffect(() => {
     mounted.current = true;
     return () => {
-      mounted.current = false; generation.current++;
-      if (recorder.current) { recorder.current.onstop = null; if (recorder.current.state !== "inactive") recorder.current.stop(); }
-      release(); window.speechSynthesis?.cancel();
+      mounted.current = false;
+      discardRecording(); window.speechSynthesis?.cancel();
     };
   }, []);
   const speak = (message: string) => {
@@ -85,26 +95,28 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
       const chunks: Blob[] = [];
       let bytes = 0;
       recording.ondataavailable = event => { if (event.data.size) { chunks.push(event.data); bytes += event.data.size; if (bytes > 480_000) stop(); } };
-      recording.onerror = () => { recording.onstop = null; release(); setPhase("idle"); setError(tr("No se pudo grabar. Escribe el comando abajo.")); };
+      recording.onerror = () => { if (!mounted.current || generation.current !== current) return; recording.onstop = null; release(); setPhase("idle"); setError(tr("No se pudo grabar. Escribe el comando abajo.")); };
       recording.onstop = () => {
-        release();
         if (!mounted.current || generation.current !== current) return;
+        release();
         setPhase("thinking");
         const blob = new Blob(chunks, { type: recording.mimeType });
         if (blob.size < 100 || blob.size > 512_000) { setPhase("idle"); setError(tr("No escuché una voz. Intenta otra vez o escribe abajo.")); return; }
-        void blob.arrayBuffer().then(audio => { if (mounted.current) void send({ audio, mime: recording.mimeType.split(";")[0] }); });
+        void blob.arrayBuffer().then(audio => { if (mounted.current && generation.current === current) void send({ audio, mime: recording.mimeType.split(";")[0] }); });
       };
       recording.start(500); setPhase("recording");
       timeout.current = setTimeout(stop, 30_000);
     } catch {
+      if (!mounted.current || generation.current !== current) return;
       release(); if (mounted.current) { setPhase("idle"); setError(tr("No pude acceder al micrófono. Revisa el permiso o escribe abajo.")); }
     }
   };
   const close = () => {
     if (busy) return;
-    generation.current++;
-    if (recorder.current?.state === "recording") recorder.current.stop();
-    release(); setPhase("idle"); setOpen(false); speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel(); button.current?.focus();
+    discardRecording(); setPhase("idle"); setOpen(false); speechGeneration.current++; setSpeaking(false); window.speechSynthesis?.cancel(); button.current?.focus();
+  };
+  const cancel = () => {
+    discardRecording(); setPhase("idle"); setError(""); button.current?.focus();
   };
   const submit = (event: FormEvent) => { event.preventDefault(); if (text.trim() && phase === "idle") void send({ text: text.trim() }); };
   return <div className={`jd-dock ${open ? "is-open" : ""}`}>
@@ -121,6 +133,6 @@ export function JDVoice({ presentationId, cue }: { presentationId: Id<"presentat
 
       <small className="jd-privacy">{tr("Solo se graba mientras escucho. El audio se procesa en Cloudflare; no se guarda en Slidex.")}</small>
     </section>}
-    <div className="jd-buttons"><button ref={button} className={`jd-talk ${phase === "recording" ? "recording" : ""}`} disabled={busy} aria-controls={open ? "jd-panel" : undefined} aria-expanded={open} onClick={() => phase === "recording" ? stop() : void start()}><span aria-hidden="true">{phase === "recording" ? "■" : "✦"}</span>{tr(phase === "recording" ? "Terminar y enviar a JD" : busy ? "JD está pensando…" : "Hablar con JD")}</button><button className="jd-keyboard" aria-label={tr("Escribir a JD")} aria-expanded={open} onClick={() => { setOpen(true); setTimeout(() => input.current?.focus(), 0); }}>⌨</button></div>
+    <div className="jd-buttons"><button ref={button} className={`jd-talk ${phase === "recording" ? "recording" : ""}`} disabled={busy} aria-controls={open ? "jd-panel" : undefined} aria-expanded={open} onClick={() => phase === "recording" ? stop() : void start()}><span aria-hidden="true">{phase === "recording" ? "■" : "✦"}</span>{tr(phase === "recording" ? "Terminar y enviar a JD" : busy ? "JD está pensando…" : "Hablar con JD")}</button>{(phase === "recording" || phase === "permission") && <button type="button" className="jd-cancel" aria-label={tr("Cancelar escucha sin enviar")} title={tr("Cancelar escucha sin enviar")} onClick={cancel}>×</button>}<button className="jd-keyboard" aria-label={tr("Escribir a JD")} aria-expanded={open} onClick={() => { setOpen(true); setTimeout(() => input.current?.focus(), 0); }}>⌨</button></div>
   </div>;
 }
