@@ -36,6 +36,7 @@ export function Countdown({ room }: { room: Doc<"presentations"> }) {
   if (!timer) return null;
   const remaining = timer.endsAt === undefined ? timer.remainingMs : sample ? Math.max(0, timer.endsAt - (sample.server + now - sample.local)) : timer.remainingMs;
   const seconds = Math.ceil(remaining / 1000);
+  if (seconds === 0) return null;
   const minutes = Math.floor(seconds / 60);
   const display = `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const finished = seconds === 0;
