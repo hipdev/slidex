@@ -743,3 +743,13 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
   .landing-actions .account-link { width:144px; font-size:11px; }
   .launchpad .language-picker select { max-width:94px; }
 }
+/* Photo-led openings and readable, concise talking points. */
+.stage.opening:has(.slide-image) { gap:12px; }
+.stage.opening:has(.slide-image) .slide-copy { margin:4px 0; }
+.stage.opening:has(.slide-image) .accent-label { display:none; }
+.stage.opening:has(.slide-image) .slide-copy h1 { font-size:clamp(28px,3vw,46px); }
+.stage.opening:has(.slide-image) .slide-copy>p:last-child { margin:10px 0 0; font-size:clamp(14px,1.4vw,20px); }
+.stage.opening .slide-image { width:100%; margin:0; background:transparent; box-shadow:none; }
+.stage.opening .slide-image img { max-height:70dvh; }
+.presentation-mode .stage.content .slide-copy>p:last-child { font-size:clamp(24px,3.2vw,48px); line-height:1.5; max-width:30ch; }
+@media(max-width:680px) { .stage.opening .slide-image img { max-height:none; }.presentation-mode .stage.content .slide-copy>p:last-child { font-size:clamp(24px,6vw,30px); } }
