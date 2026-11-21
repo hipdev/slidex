@@ -224,3 +224,20 @@ Estos comandos siguen usando Convex Static Hosting y reconstruyen el frontend
 con `VITE_CONVEX_URL` del destino antes de subir `out/`. `/agentmail` sigue siendo
 un endpoint del backend. No publiques `dist/` ni uses las instrucciones de
 Cloudflare de Conjuntify como si Slidex tuviera esa infraestructura.
+
+## Retirar y restaurar una diapositiva
+
+El propietario tiene `Eliminar slide` junto a `Editar diapositiva`. La confirmación
+abre con Cancelar enfocado. `slideTrash.remove` marca `archived: true` y reordena
+solo las diapositivas activas en una transacción. Si era la actual, selecciona la
+anterior (o la primera disponible); no permite retirar la última. El índice
+`by_presentation_and_archived_and_order` separa las activas de las archivadas,
+sin scans ni cupos consumidos por las archivadas. El borrado completo de una
+presentación conserva su índice anterior para limpiar ambas.
+
+`Archivadas` permite restaurar al final, conservando el ID, las reacciones, los
+votos y los aportes. La lista es exclusiva del propietario y muestra hasta 50
+entradas. `requireSlide` rechaza slides archivados para impedir navegación,
+edición o participación desde clientes atrasados. JD también navega únicamente
+las activas. Las pruebas comprueban permisos, reintentos, selección, reordenamiento,
+restauración, aislamiento entre salas y protección de la última diapositiva.

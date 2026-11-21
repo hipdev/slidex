@@ -127,7 +127,7 @@ export const resolve = mutation({
     if (!publish) { await ctx.db.patch(id, { status: "dismissed" }); return null; }
     if (row.status !== "ready" || !row.title || !row.body) throw new Error("Espera a que el borrador esté listo");
     await requireSlide(ctx, row.presentationId, row.slideId);
-    const last = await ctx.db.query("slides").withIndex("by_presentation_and_order", q => q.eq("presentationId", row.presentationId)).order("desc").first();
+    const last = await ctx.db.query("slides").withIndex("by_presentation_and_archived_and_order", q => q.eq("presentationId", row.presentationId).eq("archived", undefined)).order("desc").first();
     if ((last?.order ?? 0) >= 49) throw new Error("La presentación llegó a 50 slides");
     const slideId = await ctx.db.insert("slides", { presentationId: row.presentationId, order: (last?.order ?? 0) + 1, kind: row.kind === "twist" ? "research" : "content", title: row.title, body: row.body, sourceUrls: row.sourceUrls, generatedAt: Date.now() });
     await ctx.db.patch(id, { status: "published", publishedSlideId: slideId });

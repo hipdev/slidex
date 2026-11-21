@@ -148,7 +148,7 @@ export const applyCommand = internalMutation({
       await ctx.db.patch(room._id, { jdReaction: { kind: "convex_costs", startedAt, endsAt: startedAt + 10_000, requestId: args.requestId } });
       reply = es ? "Así, tal cual." : "Exactly like this.";
     } else if (args.operation === "next" || args.operation === "previous") {
-      const slides = await ctx.db.query("slides").withIndex("by_presentation_and_order", q => q.eq("presentationId", room._id)).take(50);
+      const slides = await ctx.db.query("slides").withIndex("by_presentation_and_archived_and_order", q => q.eq("presentationId", room._id).eq("archived", undefined)).take(50);
       const currentIndex = Math.max(0, slides.findIndex(slide => slide._id === room.currentSlideId));
         const target = slides[currentIndex + (args.operation === "next" ? 1 : -1)];
         if (target) {

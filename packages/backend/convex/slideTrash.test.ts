@@ -1,0 +1,41 @@
+/// <reference types="vite/client" />
+import { convexTest } from "convex-test";
+import { expect, test } from "vitest";
+import { registerCore, sessionIdentity } from "@convex-dev/auth/test";
+import rateLimiterTest from "@convex-dev/rate-limiter/test";
+import { api } from "./_generated/api";
+import schema from "./schema";
+
+const modules=import.meta.glob("./**/*.ts");
+test("only the owner can retire a slide; audience selection updates atomically and restore preserves its identity",async()=>{
+  const t=convexTest(schema,modules);registerCore(t);rateLimiterTest.register(t);
+  const host=t.withIdentity(sessionIdentity(await t.mutation(api.auth.signInAnonymous,{})));
+  const guest=t.withIdentity(sessionIdentity(await t.mutation(api.auth.signInAnonymous,{})));
+  const room=await host.mutation(api.presentations.createDemo,{ownerName:"Host",locale:"es"});
+  const read=async()=>(await guest.query(api.presentations.getBySlug,{slug:room.slug}))!;
+  const before=await read(),target=before.slides[1];
+  const args={presentationId:room.presentationId,slideId:target._id};
+  await expect(guest.mutation(api.slideTrash.remove,args)).rejects.toThrow("Only the presentation host");
+  await expect(guest.query(api.slideTrash.list,{presentationId:room.presentationId})).rejects.toThrow("Only the presentation host");
+  await host.mutation(api.presentations.setCurrentSlide,args);
+  await host.mutation(api.slideTrash.remove,args);
+  await host.mutation(api.slideTrash.remove,args);
+  const after=await read();
+  expect(after.slides.map(s=>s._id)).toEqual([before.slides[0]._id,before.slides[2]._id]);
+  expect(after.slides.map(s=>s.order)).toEqual([0,1]);
+  expect(after.presentation.currentSlideId).toBe(before.slides[0]._id);
+  expect(await host.query(api.slideTrash.list,{presentationId:room.presentationId})).toEqual([{_id:target._id,title:target.title}]);
+  await expect(host.mutation(api.presentations.setCurrentSlide,args)).rejects.toThrow("not in an active room");
+  await expect(host.mutation(api.live.saveSlide,{...args,title:"Changed",body:""})).rejects.toThrow("not in an active room");
+  await host.mutation(api.presentations.reorderSlides,{presentationId:room.presentationId,slideIds:after.slides.map(s=>s._id).reverse()});
+  await host.mutation(api.slideTrash.restore,args);
+  await host.mutation(api.slideTrash.restore,args);
+  const restored=(await read()).slides.at(-1)!;
+  expect(restored).toMatchObject({_id:target._id,title:target.title,choices:target.choices,order:2});
+  expect(restored.archived).toBeUndefined();
+  const current=await read();
+  for(const slide of current.slides.slice(0,2)) await host.mutation(api.slideTrash.remove,{presentationId:room.presentationId,slideId:slide._id});
+  await expect(host.mutation(api.slideTrash.remove,args)).rejects.toThrow("al menos una");
+  const other=await host.mutation(api.presentations.createDemo,{ownerName:"Other",locale:"es"});
+  await expect(host.mutation(api.slideTrash.remove,{...args,presentationId:other.presentationId})).rejects.toThrow("Slide not found");
+});

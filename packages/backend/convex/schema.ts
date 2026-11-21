@@ -64,6 +64,7 @@ export default defineSchema({
   }).index("by_slug", ["slug"]).index("by_joinCode", ["joinCode"]).index("by_agentInboxId", ["agentInboxId"]).index("by_ownerId", ["ownerId"]),
   slides: defineTable({
     presentationId: v.id("presentations"),
+    archived: v.optional(v.literal(true)),
     order: v.number(),
     kind: slideKind,
     layout: v.optional(slideLayout),
@@ -75,7 +76,8 @@ export default defineSchema({
     imageSourceUrl: v.optional(v.string()),
     generatedAt: v.optional(v.number()),
     visual: v.optional(v.union(v.literal("constellation"), v.literal("pulse"))),
-  }).index("by_presentation_and_order", ["presentationId", "order"]),
+  }).index("by_presentation_and_order", ["presentationId", "order"])
+    .index("by_presentation_and_archived_and_order", ["presentationId", "archived", "order"]),
   contributions: defineTable({
     presentationId: v.id("presentations"),
     slideId: v.id("slides"),

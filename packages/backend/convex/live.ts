@@ -83,7 +83,7 @@ export const saveSlide = mutation({
     if ((imageUrl && !/^https:\/\//i.test(imageUrl)) || (imageSourceUrl && !/^https?:\/\//i.test(imageSourceUrl))) throw new Error("Use a valid image URL");
     const imagePatch = { ...(args.layout !== undefined ? { layout: args.layout } : {}), imageUrl: imageUrl || undefined, imageSourceUrl: imageSourceUrl || undefined };
     if(args.slideId){await requireSlide(ctx,args.presentationId,args.slideId);await ctx.db.patch(args.slideId,{title,body,...imagePatch});return args.slideId;}
-    const last=await ctx.db.query("slides").withIndex("by_presentation_and_order",q=>q.eq("presentationId",args.presentationId)).order("desc").first();
+    const last=await ctx.db.query("slides").withIndex("by_presentation_and_archived_and_order",q=>q.eq("presentationId",args.presentationId).eq("archived", undefined)).order("desc").first();
     if((last?.order??0)>=49)throw new Error("This deck has reached its 50 slide limit");
     const slideId=await ctx.db.insert("slides",{presentationId:args.presentationId,title,body,kind:"content",order:(last?.order??0)+1,...imagePatch});
     await ctx.db.patch(args.presentationId,{currentSlideId:slideId,showConclusions:false});return slideId;

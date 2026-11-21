@@ -75,7 +75,7 @@ export const getBySlug = query({
     if (!presentation && /^[A-Z0-9]{4}$/.test(code)) presentation = await ctx.db.query("presentations").withIndex("by_joinCode", q => q.eq("joinCode", code)).unique();
     if (!presentation && /^[A-Z0-9]{4,5}$/.test(code)) presentation = await ctx.db.query("presentations").withIndex("by_slug", q => q.eq("slug", `LIVE-${code}`)).unique();
     if (!presentation) return null;
-    const slides = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", presentation._id)).take(50);
+    const slides = await ctx.db.query("slides").withIndex("by_presentation_and_archived_and_order", (q) => q.eq("presentationId", presentation._id).eq("archived", undefined)).take(50);
     const reactions = await ctx.db.query("reactions").withIndex("by_presentationId", (q) => q.eq("presentationId", presentation._id)).order("desc").take(200);
     const votes = await ctx.db.query("votes").withIndex("by_presentation_and_slide", (q) => q.eq("presentationId", presentation._id)).take(200);
     const userId = await getAuthUserId(ctx);
@@ -241,7 +241,7 @@ export const addSlide = internalMutation({
   returns: v.id("slides"),
   handler: async (ctx, args) => {
     if (!await ctx.db.get(args.presentationId)) throw new Error("Presentation not found");
-    const last = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", args.presentationId)).order("desc").first();
+    const last = await ctx.db.query("slides").withIndex("by_presentation_and_archived_and_order", (q) => q.eq("presentationId", args.presentationId).eq("archived", undefined)).order("desc").first();
     if ((last?.order ?? 0) >= 49) throw new Error("This deck has reached its 50 slide limit");
     return await ctx.db.insert("slides", { ...args, order: (last?.order ?? -1) + 1, generatedAt: Date.now() });
   },
@@ -253,7 +253,7 @@ export const reorderSlides = mutation({
   handler: async (ctx, args) => {
     await requireOwner(ctx, args.presentationId);
     if (!args.slideIds.length || args.slideIds.length > 50 || new Set(args.slideIds).size !== args.slideIds.length) throw new Error("Invalid slide order");
-    const existing = await ctx.db.query("slides").withIndex("by_presentation_and_order", (q) => q.eq("presentationId", args.presentationId)).take(50);
+    const existing = await ctx.db.query("slides").withIndex("by_presentation_and_archived_and_order", (q) => q.eq("presentationId", args.presentationId).eq("archived", undefined)).take(50);
     if (existing.length !== args.slideIds.length || existing.some((slide) => !args.slideIds.includes(slide._id))) throw new Error("The slide order does not match this presentation");
     await Promise.all(args.slideIds.map((slideId, order) => ctx.db.patch(slideId, { order })));
     return null;
@@ -293,7 +293,7 @@ export async function requireOwner(ctx: MutationCtx | QueryCtx, presentationId: 
 export async function requireSlide(ctx: MutationCtx | QueryCtx, presentationId: Id<"presentations">, slideId: Id<"slides">) {
   const room = await ctx.db.get(presentationId);
   const slide = await ctx.db.get(slideId);
-  if (!room || room.status === "ended" || !slide || slide.presentationId !== presentationId) throw new Error("Slide is not in an active room");
+  if (!room || room.status === "ended" || !slide || slide.presentationId !== presentationId || slide.archived) throw new Error("Slide is not in an active room");
   return slide;
 }
 

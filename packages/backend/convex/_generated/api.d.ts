@@ -23,6 +23,7 @@ import type * as moments from "../moments.js";
 import type * as presentations from "../presentations.js";
 import type * as research from "../research.js";
 import type * as slideAgent from "../slideAgent.js";
+import type * as slideTrash from "../slideTrash.js";
 import type * as users from "../users.js";
 
 import type {
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   presentations: typeof presentations;
   research: typeof research;
   slideAgent: typeof slideAgent;
+  slideTrash: typeof slideTrash;
   users: typeof users;
 }>;
 
