@@ -31,6 +31,7 @@ export function ServiceIcon({ index, title = "" }: { index: number; title?: stri
 }
 
 export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
+  if (slide.layout === "abstractions" || slide.layout === "architecture") return <ThinkingSlide slide={slide} />;
   if (slide.layout === "demo") return <DemoSlide slide={slide} />;
   if (slide.layout === "rebask") return <div className="story-rebask">
     <div className="rebask-brand"><span className="rebask-mark" aria-hidden="true">R</span><span>Rebask</span><span className="rebask-stack">React + Vite</span></div>
@@ -79,6 +80,38 @@ export function DesignedSlide({ slide }: { slide: Doc<"slides"> }) {
     </div>;
   }
   return <><div className="slide-copy"><h1>{slide.title}</h1><p>{slide.body}</p></div>{slide.imageUrl && <figure className="slide-image"><img src={slide.imageUrl} alt={slide.title} /></figure>}</>;
+}
+
+function ThinkingSlide({ slide }: { slide: Doc<"slides"> }) {
+  const architecture = slide.layout === "architecture";
+  const cards = slide.body.split("\n").filter(line=>line.trim()).slice(0,3).map(line=>{const [title,...description]=line.split("|");return {title:title.trim(),description:description.join("|").trim()};});
+  return <div className={`story-thinking ${architecture ? "thinking-systems" : "thinking-abstractions"}`}>
+    <div className="thinking-grid"><div className="thinking-copy"><span className="story-kicker">{architecture ? "DISEÑAR PARA EL MUNDO REAL" : "CONSTRUIR CON IA · PENSAR EN CAPAS"}</span><h1>{slide.title}</h1><p>{architecture ? "La red falla. Los modelos tardan. El sistema debe responder." : "La sintaxis importa. Entender qué estás construyendo, todavía más."}</p></div>
+    <div className="thinking-art">{architecture ? <ReliabilityImage/> : <AbstractionImage/>}</div></div>
+    <div className="thinking-cards">{cards.map((card,index)=><article key={index}><span>0{index+1}</span><h2>{card.title}</h2><p>{card.description}</p></article>)}</div>
+    <footer className="thinking-footer"><span>{architecture ? "Una transacción no deshace una llamada externa." : "La IA propone la implementación. Tú defines las garantías."}</span><b>{architecture ? "Arquitectura = decisiones + consecuencias" : "Menos memorizar. Más comprender."}</b></footer>
+  </div>;
+}
+
+function AbstractionImage() {
+  return <svg viewBox="0 0 600 390" role="img" aria-label="Tres capas conectadas: intención del producto, contratos del sistema e implementación asistida por IA">
+    <defs><pattern id="thinking-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#9a9dbe" opacity=".45"/></pattern></defs><rect width="600" height="390" rx="26" fill="url(#thinking-grid)"/>
+    <path className="thinking-wire" d="M140 90v200h320V90" fill="none" stroke="#8271e8" strokeWidth="3" strokeDasharray="8 10"/>
+    <g transform="translate(84 24) rotate(-4 216 48)"><rect width="432" height="88" rx="16" fill="#342b54" stroke="#746294"/><text x="24" y="32" fill="#d7b5ff" fontSize="12" fontFamily="monospace">01 / INTENCIÓN</text><text x="24" y="65" fill="#fff9ee" fontSize="25" fontWeight="650">¿Qué problema resolvemos?</text><path d="m378 28 8 12 14 4-14 4-8 12-4-12-14-4 14-4Z" fill="#d7b5ff"/></g>
+    <g transform="translate(58 140)"><rect width="484" height="104" rx="16" fill="#e4dfb1" stroke="#8d885c"/><text x="24" y="33" fill="#575139" fontSize="12" fontFamily="monospace">02 / CONTRATOS</text><text x="24" y="69" fill="#332f22" fontSize="29" fontWeight="700">Estado · límites · garantías</text></g>
+    <g transform="translate(84 272) rotate(4 216 48)"><rect width="432" height="90" rx="16" fill="#fffaf1" stroke="#aea7bd"/><text x="24" y="32" fill="#655e78" fontSize="12" fontFamily="monospace">03 / IMPLEMENTACIÓN</text><text x="24" y="66" fill="#342b54" fontSize="24" fontWeight="650">Código + IA + herramientas</text></g>
+  </svg>;
+}
+
+function ReliabilityImage() {
+  return <svg viewBox="0 0 600 390" role="img" aria-label="Una solicitud se reserva en Convex, llama al modelo y puede quedar incierta tras un timeout; la reconciliación verifica su estado">
+    <rect x="12" y="20" width="576" height="350" rx="26" fill="#143039" stroke="#58818a"/>
+    <text x="38" y="58" fill="#a4c1c9" fontFamily="monospace" fontSize="12">UNA SOLICITUD · VARIOS PUNTOS DE FALLO</text>
+    <path className="thinking-wire" d="M126 151h338" fill="none" stroke="#74d6d0" strokeWidth="3" strokeDasharray="7 9"/>
+    {[{x:38,label:"App",sub:"solicita"},{x:228,label:"Convex",sub:"reserva"},{x:418,label:"LLM",sub:"ejecuta"}].map(node=><g key={node.x}><rect x={node.x} y="98" width="144" height="108" rx="18" fill="#1b4650" stroke="#79abb5"/><text x={node.x+72} y="142" textAnchor="middle" fill="#fff9eb" fontSize="25" fontWeight="650">{node.label}</text><text x={node.x+72} y="176" textAnchor="middle" fill="#b9d4d8" fontSize="16">{node.sub}</text></g>)}
+    <path d="M490 207v44H300v31" fill="none" stroke="#efb77b" strokeWidth="2" strokeDasharray="6 5"/><rect x="353" y="229" width="148" height="32" rx="16" fill="#efb77b"/><text x="427" y="251" textAnchor="middle" fill="#332d24" fontSize="15" fontWeight="650">¿Timeout?</text>
+    <rect x="92" y="286" width="416" height="53" rx="14" fill="#263c42" stroke="#a6c7c5"/><text x="300" y="319" textAnchor="middle" fill="#d7f2cf" fontSize="22" fontWeight="650">Verificar → reconciliar</text>
+  </svg>;
 }
 
 function DemoSlide({ slide }: { slide: Doc<"slides"> }) {

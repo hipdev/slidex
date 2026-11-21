@@ -935,5 +935,26 @@ button:disabled, .agent-panel button:disabled { opacity:1; cursor:not-allowed; b
 .demo-sticker { position:absolute; top:-20px; right:-8px; z-index:1; transform:rotate(-6deg); color:#263019; background:#d4ed85; padding:12px 20px; border-radius:6px; font:600 14px 'DM Mono',monospace; }
 .demo-meme figcaption { display:flex; flex-direction:column; gap:8px; margin:25px 10px 0; font-size:12px; color:#e1cfc6; }
 .demo-meme figcaption a { text-decoration:underline; text-underline-offset:4px; }
+.stage.design-abstractions { background:radial-gradient(ellipse at 90% 10%,#d9c9ed,transparent 60%),#f5f0f5; color:#30263e; }
+.stage.design-architecture { background:radial-gradient(ellipse at 90% 0%,#204c54,transparent 65%),#101f28; color:#f9f6e9; }
+.stage.design-abstractions:before,.stage.design-abstractions:after,.stage.design-architecture:before,.stage.design-architecture:after { display:none; }
+.stage.design-architecture .stage-meta,.stage.design-architecture .slide-footer,.stage.design-architecture .slide-participation>small { color:#bcd9dd; }
+.thinking-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:5%; align-items:center; margin:24px 0 30px; }
+.thinking-copy>.story-kicker { color:#725a8b; }
+.thinking-copy h1 { font-size:clamp(36px,4.3vw,72px); line-height:1.04; letter-spacing:-.045em; max-width:18ch; margin:22px 0; }
+.thinking-copy>p { font-size:clamp(17px,1.6vw,26px); line-height:1.45; color:#645271; max-width:33ch; }
+.thinking-art svg { display:block; width:100%; height:auto; }
+.thinking-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+.thinking-cards article { position:relative; border:1px solid #a69ab7; border-radius:16px; background:#fffaf5; padding:24px; }
+.thinking-cards article>span { font:500 11px 'DM Mono',monospace; letter-spacing:.1em; color:#78658a; }
+.thinking-cards h2 { font-size:clamp(21px,2vw,32px); letter-spacing:-.025em; margin:16px 0 10px; }
+.thinking-cards p { font-size:clamp(16px,1.5vw,23px); line-height:1.35; margin:0; color:#6b5774; }
+.thinking-footer { display:flex; justify-content:space-between; gap:20px; margin:26px 0 10px; font-size:clamp(12px,1.1vw,17px); color:#6b5774; }
+.thinking-footer b { font-weight:650; color:#453454; }
+.thinking-systems .thinking-copy>.story-kicker { color:#9dddd4; }.thinking-systems .thinking-copy>p { color:#b6d1d4; }
+.thinking-systems .thinking-cards article { background:#19333c; border-color:#618692; }.thinking-systems .thinking-cards article>span { color:#9dddd4; }.thinking-systems .thinking-cards p,.thinking-systems .thinking-footer { color:#c3d8da; }.thinking-systems .thinking-footer b { color:#ccecbd; }
+.thinking-wire { animation:thinking-flow 12s linear infinite; }@keyframes thinking-flow { to { stroke-dashoffset:-180; } }
+@media(prefers-reduced-motion:reduce) { .thinking-wire { animation:none; } }
+@media(max-width:680px) { .thinking-grid { grid-template-columns:1fr; gap:14px; margin:20px 0 24px; }.thinking-copy h1 { font-size:42px; margin:18px 0; }.thinking-copy>p { font-size:19px; }.thinking-cards { grid-template-columns:1fr; gap:12px; }.thinking-cards article { padding:20px; }.thinking-cards h2 { font-size:26px; margin:10px 0; }.thinking-cards p { font-size:19px; }.thinking-footer { flex-direction:column; gap:14px; font-size:14px; line-height:1.5; } }
 @media(max-width:680px) { .story-demo { grid-template-columns:1fr; gap:40px; padding:14px 0; }.demo-quote { font-size:32px; margin-top:24px; }.demo-copy h1 { font-size:44px; }.demo-subtitle { font-size:20px; margin:18px 0 26px; }.demo-stack { font-size:16px; padding-top:20px; }.demo-meme { width:92%; max-width:340px; transform:none; }.demo-sticker { font-size:11px; }.demo-meme figcaption { font-size:10px; } }
 @media(max-width:680px) { .rebask-brand { font-size:26px; gap:12px; margin:8px 0 30px; }.rebask-mark { width:44px; height:44px; font-size:23px; border-radius:11px; }.rebask-brand .rebask-stack { font-size:10px; }.rebask-layout { grid-template-columns:1fr; gap:28px; }.rebask-editorial h1 { font-size:44px; margin:18px 0 26px; }.rebask-features h2 { font-size:23px; }.rebask-command { font-size:13px; padding:16px; }.rebask-creator { transform:none; display:grid; grid-template-columns:100px 1fr; border-radius:15px; box-shadow:5px 6px 0 #d3dbce; }.rebask-creator>img { width:100%; height:100%; aspect-ratio:auto; }.rebask-creator-copy { padding:18px; }.rebask-creator h2 { font-size:25px; margin-top:10px; }.rebask-creator a { font-size:16px; }.rebask-creator p { font-size:15px; margin-top:12px; }.rebask-footer { font-size:11px; margin-top:28px; } }
